@@ -1,0 +1,2 @@
+C:/Users/Marlon/Downloads/InvPlex/inventario_proyecto/flutter_app/build/.cxx/release/2f4gg1u5/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/Marlon/Downloads/InvPlex/inventario_proyecto/flutter_app/build/.cxx/release/2f4gg1u5/x86_64/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,2 @@
+ninja: Entering directory `C:\Users\Marlon\AppData\Local\Pub\Cache\hosted\pub.dev\jni-1.0.3\android\.cxx\RelWithDebInfo\501u6e1t\x86'
+[1/1] Linking C shared library C:\Users\Marlon\Downloads\InvPlex\inventario_proyecto\flutter_app\build\jni\intermediates\cxx\RelWithDebInfo\501u6e1t\obj\x86\libdartjni.so
