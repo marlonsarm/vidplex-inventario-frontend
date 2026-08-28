@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -30,6 +31,11 @@ class _CrearProductoScreenState extends State<CrearProductoScreen> {
   List<dynamic> _secciones = [];
   bool _cargandoSecciones = true;
   bool _guardando = false;
+
+  Timer? _debounce;
+  List<dynamic> _sugerencias = [];
+  bool _buscandoSugerencias = false;
+  Map<String, dynamic>? _productoSeleccionado;
 
   @override
   void initState() {
@@ -88,16 +94,50 @@ class _CrearProductoScreenState extends State<CrearProductoScreen> {
       _imagenNombre = archivo.name;
     });
   }
+
+  void _onNombreChanged(String texto) {
+    if (_productoSeleccionado != null) {
+      setState(() => _productoSeleccionado = null);
+    }
+    _debounce?.cancel();
+    if (texto.trim().length < 2) {
+      setState(() => _sugerencias = []);
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      setState(() => _buscandoSugerencias = true);
+      try {
+        final resultado = await ApiService.getProductos(widget.token, buscar: texto.trim(), porPagina: 8);
+        if (!mounted) return;
+        setState(() => _sugerencias = resultado['productos'] ?? []);
+      } catch (e) {
+        if (mounted) setState(() => _sugerencias = []);
+      } finally {
+        if (mounted) setState(() => _buscandoSugerencias = false);
+      }
+    });
+  }
+
+  void _seleccionarSugerencia(Map<String, dynamic> producto) {
+    setState(() {
+      _nombreController.text = producto['nombre'];
+      _productoSeleccionado = producto;
+      _sugerencias = [];
+    });
+  }
+
   Future<void> _guardarProducto() async {
     if (!_formKey.currentState!.validate()) return;
 
     final nombreIngresado = _nombreController.text.trim();
 
-    Map<String, dynamic>? productoExistente;
-    try {
-      productoExistente = await ApiService.buscarProductoPorNombre(widget.token, nombreIngresado);
-    } catch (e) {
-      productoExistente = null;
+    Map<String, dynamic>? productoExistente = _productoSeleccionado;
+    if (productoExistente == null) {
+      try {
+        productoExistente = await ApiService.buscarProductoPorNombre(widget.token, nombreIngresado);
+      } catch (e) {
+        productoExistente = null;
+      }
     }
 
     if (productoExistente != null && mounted) {
@@ -208,9 +248,9 @@ try {
       setState(() => _guardando = false);
     }
   }
-
   @override
   void dispose() {
+    _debounce?.cancel();
     _codigoController.dispose();
     _nombreController.dispose();
     _categoriaController.dispose();
@@ -379,7 +419,30 @@ try {
                     style: AppTextStyles.cuerpo(size: 14.5, peso: FontWeight.w600),
                     decoration: _decoracion('Nombre del producto *', icono: Icons.label_outline),
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'El nombre es obligatorio' : null,
+                    onChanged: _onNombreChanged,
                   ),
+                  if (_buscandoSugerencias)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: LinearProgressIndicator(minHeight: 2, color: AppColors.acento),
+                    ),
+                  if (_sugerencias.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.negro2,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.grisLinea),
+                      ),
+                      child: Column(
+                        children: _sugerencias.map<Widget>((p) => ListTile(
+                          dense: true,
+                          title: Text(p['nombre'], style: AppTextStyles.cuerpo(size: 13.5, peso: FontWeight.w600)),
+                          subtitle: Text('Stock: ${p['stock_actual']} ${p['unidad_medida']}', style: AppTextStyles.subtitulo(size: 12)),
+                          onTap: () => _seleccionarSugerencia(p),
+                        )).toList(),
+                      ),
+                    ),
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: _codigoController,
