@@ -76,6 +76,27 @@ class ApiService {
     }
   }
 
+  // Busca un producto existente por nombre exacto (sin distinguir mayúsculas/tildes).
+  // Devuelve null si no existe ninguno con ese nombre.
+  static Future<Map<String, dynamic>?> buscarProductoPorNombre(String token, String nombre) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/productos/buscar-por-nombre')
+        .replace(queryParameters: {'nombre': nombre});
+
+    final respuesta = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (respuesta.statusCode == 200) {
+      return jsonDecode(respuesta.body);
+    } else if (respuesta.statusCode == 404) {
+      return null;
+    } else {
+      final error = jsonDecode(respuesta.body);
+      throw Exception(error['detail'] ?? 'Error al buscar el producto por nombre');
+    }
+  }
+
   // Registra una entrada o salida de stock
   static Future<Map<String, dynamic>> registrarMovimiento({
     required String token,
