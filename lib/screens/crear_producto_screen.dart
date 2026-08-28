@@ -91,6 +91,84 @@ class _CrearProductoScreenState extends State<CrearProductoScreen> {
   Future<void> _guardarProducto() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final nombreIngresado = _nombreController.text.trim();
+
+    Map<String, dynamic>? productoExistente;
+    try {
+      productoExistente = await ApiService.buscarProductoPorNombre(widget.token, nombreIngresado);
+    } catch (e) {
+      productoExistente = null;
+    }
+
+    if (productoExistente != null && mounted) {
+      final cantidadASumar = int.tryParse(_stockActualController.text) ?? 0;
+      final continuar = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Este producto ya existe'),
+          content: Text(
+            'Ya existe "${productoExistente!['nombre']}" con stock actual '
+            '${productoExistente['stock_actual']} ${productoExistente['unidad_medida']}.\n\n'
+            'Si continúas, se sumará $cantidadASumar a ese producto en vez de crear uno nuevo.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Sumar stock a ese producto'),
+            ),
+          ],
+        ),
+      );
+
+      if (continuar != true) return;
+
+      setState(() => _guardando = true);
+      try {
+        await ApiService.registrarMovimiento(
+          token: widget.token,
+          productoId: productoExistente['id'],
+          tipo: 'entrada',
+          cantidad: cantidadASumar,
+          motivo: 'Ingreso agregado desde formulario (nombre ya existía)',
+        );
+
+        if (_imagenBytes != null) {
+          try {
+            await ApiService.subirFotoProducto(
+              widget.token,
+              productoExistente['id'],
+              _imagenBytes!,
+              _imagenNombre ?? 'foto.jpg',
+            );
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Stock actualizado, pero la foto no se pudo subir: $e'), backgroundColor: Colors.orange),
+              );
+            }
+          }
+        }
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Stock actualizado correctamente'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop(true);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+        );
+      } finally {
+        if (mounted) setState(() => _guardando = false);
+      }
+      return;
+    }
+
     setState(() => _guardando = true);
 try {
       final creado = await ApiService.crearProducto(
