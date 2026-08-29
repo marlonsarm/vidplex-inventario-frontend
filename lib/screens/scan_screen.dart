@@ -1,4 +1,6 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../services/api_service.dart';
 import '../config.dart';
@@ -14,7 +16,7 @@ class ScanScreen extends StatefulWidget {
   State<ScanScreen> createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends State<ScanScreen> {
+class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateMixin {
   final MobileScannerController _controller = MobileScannerController();
   bool _procesando = false;
   Map<String, dynamic>? _producto;
@@ -28,12 +30,26 @@ class _ScanScreenState extends State<ScanScreen> {
   bool _creandoProducto = false;
   List<dynamic> _secciones = [];
   bool _seccionesCargadas = false;
+
+  // Controla la animación de la línea de escaneo dentro del recuadro.
+  late final AnimationController _scanLineController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scanLineController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1700),
+    )..repeat(reverse: true);
+  }
+
 Future<void> _onDetect(BarcodeCapture capture) async {
     if (_procesando) return;
 
     final codigo = capture.barcodes.first.rawValue;
     if (codigo == null) return;
 
+    HapticFeedback.mediumImpact();
     _controller.stop();
     await _buscarProducto(codigo);
   }
@@ -286,6 +302,7 @@ Future<void> _onDetect(BarcodeCapture capture) async {
 
   @override
   void dispose() {
+    _scanLineController.dispose();
     _controller.dispose();
     _cantidadController.dispose();
     _motivoController.dispose();
@@ -323,6 +340,30 @@ Future<void> _onDetect(BarcodeCapture capture) async {
             Text('Escanear producto', style: AppTextStyles.cuerpo(size: 16, peso: FontWeight.w800)),
           ],
         ),
+        actions: _producto == null
+            ? [
+                ValueListenableBuilder<MobileScannerState>(
+                  valueListenable: _controller,
+                  builder: (context, state, child) {
+                    final torchActivo = state.torchState == TorchState.on;
+                    return IconButton(
+                      tooltip: 'Linterna',
+                      onPressed: () => _controller.toggleTorch(),
+                      icon: Icon(
+                        torchActivo ? Icons.flash_on : Icons.flash_off_outlined,
+                        color: torchActivo ? AppColors.acento : AppColors.blanco,
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  tooltip: 'Cambiar cámara',
+                  onPressed: () => _controller.switchCamera(),
+                  icon: const Icon(Icons.cameraswitch_outlined, color: AppColors.blanco),
+                ),
+                const SizedBox(width: 4),
+              ]
+            : null,
       ),
       body: _producto == null ? _vistaCamara() : _vistaProducto(),
     );
@@ -334,6 +375,47 @@ Future<void> _onDetect(BarcodeCapture capture) async {
         MobileScanner(
           controller: _controller,
           onDetect: _onDetect,
+        ),
+        // Overlay profesional: recuadro con esquinas y línea de escaneo animada.
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final size = constraints.biggest;
+            final ladoCutout = math.min(size.width * 0.78, 320.0);
+            final cutout = Rect.fromCenter(
+              center: Offset(size.width / 2, size.height / 2 - 30),
+              width: ladoCutout,
+              height: ladoCutout,
+            );
+            return IgnorePointer(
+              child: Stack(
+                children: [
+                  AnimatedBuilder(
+                    animation: _scanLineController,
+                    builder: (context, _) => CustomPaint(
+                      size: size,
+                      painter: _ScannerOverlayPainter(
+                        cutout: cutout,
+                        borderRadius: 24,
+                        dimColor: Colors.black.withValues(alpha: 0.55),
+                        frameColor: AppColors.acento,
+                        scanLineY: _scanLineController.value,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: cutout.bottom + 16,
+                    left: 24,
+                    right: 24,
+                    child: Text(
+                      _procesando ? 'Verificando código...' : 'Ubica el código dentro del recuadro',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.cuerpo(size: 13, color: Colors.white.withValues(alpha: 0.85)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
         Positioned(
           top: 16,
@@ -507,5 +589,91 @@ Widget _vistaProducto() {
         ],
       ),
     );
+  }
+}
+
+/// Pinta el overlay del scanner: fondo oscurecido con un recuadro
+/// recortado (el "cutout"), esquinas tipo marco profesional y una
+/// línea de escaneo animada que sube y baja dentro del recuadro.
+class _ScannerOverlayPainter extends CustomPainter {
+  final Rect cutout;
+  final double borderRadius;
+  final Color dimColor;
+  final Color frameColor;
+  final double scanLineY; // 0.0 a 1.0, posición relativa dentro del cutout
+
+  _ScannerOverlayPainter({
+    required this.cutout,
+    required this.borderRadius,
+    required this.dimColor,
+    required this.frameColor,
+    required this.scanLineY,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final backgroundPath = Path()..addRect(Offset.zero & size);
+    final cutoutRRect = RRect.fromRectAndRadius(cutout, Radius.circular(borderRadius));
+    final cutoutPath = Path()..addRRect(cutoutRRect);
+
+    // Fondo oscurecido con el recuadro "recortado" (transparente).
+    canvas.drawPath(
+      Path.combine(PathOperation.difference, backgroundPath, cutoutPath),
+      Paint()..color = dimColor,
+    );
+
+    // Borde sutil alrededor de todo el recuadro.
+    canvas.drawRRect(
+      cutoutRRect,
+      Paint()
+        ..color = frameColor.withValues(alpha: 0.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
+    );
+
+    // Esquinas tipo marco (estilo apps de escaneo profesionales).
+    final cornerPaint = Paint()
+      ..color = frameColor
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    const cornerLen = 26.0;
+    _drawCorner(canvas, cornerPaint, cutout.topLeft, 1, 1, cornerLen);
+    _drawCorner(canvas, cornerPaint, cutout.topRight, -1, 1, cornerLen);
+    _drawCorner(canvas, cornerPaint, cutout.bottomRight, -1, -1, cornerLen);
+    _drawCorner(canvas, cornerPaint, cutout.bottomLeft, 1, -1, cornerLen);
+
+    // Línea de escaneo animada con un leve resplandor.
+    final lineY = cutout.top + cutout.height * scanLineY;
+    final glowRect = Rect.fromLTRB(cutout.left + 6, lineY - 9, cutout.right - 6, lineY + 9);
+    final glowPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          frameColor.withValues(alpha: 0),
+          frameColor.withValues(alpha: 0.45),
+          frameColor.withValues(alpha: 0),
+        ],
+      ).createShader(glowRect);
+    canvas.drawRect(glowRect, glowPaint);
+
+    canvas.drawRect(
+      Rect.fromLTRB(cutout.left + 6, lineY - 1, cutout.right - 6, lineY + 1),
+      Paint()..color = frameColor,
+    );
+  }
+
+  void _drawCorner(Canvas canvas, Paint paint, Offset corner, double dx, double dy, double len) {
+    canvas.drawLine(corner, Offset(corner.dx + dx * len, corner.dy), paint);
+    canvas.drawLine(corner, Offset(corner.dx, corner.dy + dy * len), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScannerOverlayPainter oldDelegate) {
+    return oldDelegate.scanLineY != scanLineY ||
+        oldDelegate.cutout != cutout ||
+        oldDelegate.frameColor != frameColor;
   }
 }
