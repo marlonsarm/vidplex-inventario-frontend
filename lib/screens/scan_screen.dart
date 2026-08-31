@@ -30,6 +30,7 @@ class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateM
   String? _ultimoCodigoEscaneado;
   bool _creandoProducto = false;
   bool _productoRecienCreado = false;
+  bool _codigoRecienAsignado = false;
   List<dynamic> _secciones = [];
   bool _seccionesCargadas = false;
 
@@ -216,6 +217,159 @@ Future<void> _onDetect(BarcodeCapture capture) async {
     }
   }
 
+  Future<void> _abrirBusquedaProductoExistente() async {
+    if (_ultimoCodigoEscaneado == null) return;
+
+    final nombreController = TextEditingController();
+    final stockController = TextEditingController(text: '0');
+    List<dynamic> resultados = [];
+    Map<String, dynamic>? seleccionado;
+    bool buscando = false;
+    String? errorBusqueda;
+
+    final asignado = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          Future<void> buscar() async {
+            final nombre = nombreController.text.trim();
+            if (nombre.isEmpty) return;
+            setDialogState(() {
+              buscando = true;
+              errorBusqueda = null;
+              seleccionado = null;
+            });
+            try {
+              final lista = await ApiService.buscarProductosPorNombreParcial(widget.token, nombre);
+              setDialogState(() {
+                resultados = lista;
+                buscando = false;
+              });
+            } catch (e) {
+              setDialogState(() {
+                errorBusqueda = e.toString().replaceAll('Exception: ', '');
+                buscando = false;
+              });
+            }
+          }
+
+          return AlertDialog(
+            title: const Text('Buscar producto existente'),
+            content: SizedBox(
+              width: 400,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Código: $_ultimoCodigoEscaneado', style: const TextStyle(color: Colors.grey)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: nombreController,
+                            autofocus: true,
+                            decoration: const InputDecoration(labelText: 'Nombre del producto', border: OutlineInputBorder()),
+                            onSubmitted: (_) => buscar(),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: buscando ? null : buscar,
+                          child: const Text('Buscar'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (buscando) const Center(child: CircularProgressIndicator()),
+                    if (errorBusqueda != null)
+                      Text(errorBusqueda!, style: const TextStyle(color: Colors.red)),
+                    if (!buscando && resultados.isEmpty && errorBusqueda == null && nombreController.text.isNotEmpty)
+                      const Text('Sin resultados todavía. Busca por nombre.', style: TextStyle(color: Colors.grey)),
+                    ...resultados.map((p) {
+                      final esSeleccionado = seleccionado != null && seleccionado!['id'] == p['id'];
+                      return Card(
+                        color: esSeleccionado ? AppColors.acentoSuave : null,
+                        child: ListTile(
+                          title: Text(p['nombre']),
+                          subtitle: Text('${p['categoria'] ?? 'Sin categoría'} · Stock: ${p['stock_actual']} ${p['unidad_medida']}'),
+                          trailing: esSeleccionado ? const Icon(Icons.check_circle, color: AppColors.acento) : null,
+                          onTap: () => setDialogState(() => seleccionado = p),
+                        ),
+                      );
+                    }),
+                    if (seleccionado != null) ...[
+                      const Divider(height: 24),
+                      Text('Asignar código a: ${seleccionado!['nombre']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: stockController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Cantidad a ingresar (opcional)', border: OutlineInputBorder()),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: seleccionado == null
+                    ? null
+                    : () {
+                        Navigator.of(context).pop(true);
+                        _asignarCodigoAProductoExistente(
+                          productoId: seleccionado!['id'],
+                          codigoBarras: _ultimoCodigoEscaneado!,
+                          stockIngresado: int.tryParse(stockController.text) ?? 0,
+                        );
+                      },
+                child: const Text('Asignar código'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (asignado != true) {
+      _reiniciarEscaneo();
+    }
+  }
+
+  Future<void> _asignarCodigoAProductoExistente({
+    required int productoId,
+    required String codigoBarras,
+    required int stockIngresado,
+  }) async {
+    setState(() => _creandoProducto = true);
+    try {
+      final producto = await ApiService.asignarCodigoAlterno(
+        token: widget.token,
+        productoId: productoId,
+        codigoBarras: codigoBarras,
+        stockIngresado: stockIngresado,
+      );
+      if (!mounted) return;
+      setState(() {
+        _producto = producto;
+        _error = null;
+        _codigoRecienAsignado = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      _mostrarMensaje(e.toString().replaceAll('Exception: ', ''), esError: true);
+      _reiniciarEscaneo();
+    } finally {
+      if (mounted) setState(() => _creandoProducto = false);
+    }
+  }
+
   Future<void> _abrirBusquedaManual() async {
     final codigoController = TextEditingController();
     final codigo = await showDialog<String>(
@@ -296,6 +450,7 @@ Future<void> _onDetect(BarcodeCapture capture) async {
       _producto = null;
       _error = null;
       _productoRecienCreado = false;
+      _codigoRecienAsignado = false;
       _cantidadController.text = '1';
       _motivoController.clear();
       _tipoMovimiento = 'salida';
@@ -370,7 +525,9 @@ Future<void> _onDetect(BarcodeCapture capture) async {
       ),
       body: _producto == null
           ? _vistaCamara()
-          : (_productoRecienCreado ? _vistaProductoCreado() : _vistaProducto()),
+          : (_productoRecienCreado
+              ? _vistaProductoCreado()
+              : (_codigoRecienAsignado ? _vistaCodigoAsignado() : _vistaProducto())),
     );
   }
 
@@ -513,11 +670,22 @@ Future<void> _onDetect(BarcodeCapture capture) async {
                       ElevatedButton.icon(
                         onPressed: _abrirFormularioNuevoProducto,
                         icon: const Icon(Icons.add_box_outlined),
-                        label: const Text('Registrar este producto'),
+                        label: const Text('Agregar producto nuevo'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.acento,
                           foregroundColor: Colors.white,
                           elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.boton)),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _abrirBusquedaProductoExistente,
+                        icon: const Icon(Icons.inventory_2_outlined),
+                        label: const Text('Ya está en el inventario'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.boton)),
                         ),
                       ),
@@ -596,6 +764,99 @@ Widget _vistaProductoCreado() {
                         const SizedBox(width: 8),
                         Text(
                           'Stock inicial: $stockActual $unidad',
+                          style: AppTextStyles.cuerpo(size: 16, peso: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _reiniciarEscaneo,
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Escanear otro producto'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.acento,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.boton)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _vistaCodigoAsignado() {
+    final nombre = _producto!['nombre'];
+    final categoria = _producto!['categoria'];
+    final stockActual = _producto!['stock_actual'];
+    final unidad = _producto!['unidad_medida'];
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.greenAccent.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.link, color: Colors.greenAccent, size: 56),
+            ),
+            const SizedBox(height: 20),
+            Text('Código asignado', style: AppTextStyles.titulo(size: 20)),
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(color: AppColors.acento.withValues(alpha: 0.2)),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.negro2,
+                    AppColors.negro2.withValues(alpha: 0.9),
+                  ],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(nombre, style: AppTextStyles.cuerpo(size: 18, peso: FontWeight.w800)),
+                  if (categoria != null && categoria.toString().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(categoria, style: AppTextStyles.subtitulo()),
+                  ],
+                  const SizedBox(height: 4),
+                  Text('Código nuevo: $_ultimoCodigoEscaneado', style: AppTextStyles.subtitulo()),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.acento.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.inventory, size: 18, color: AppColors.acento),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Stock actual: $stockActual $unidad',
                           style: AppTextStyles.cuerpo(size: 16, peso: FontWeight.w800),
                         ),
                       ],

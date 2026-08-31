@@ -97,6 +97,54 @@ class ApiService {
     }
   }
 
+  // Busca productos existentes cuyo nombre contenga el texto dado (búsqueda parcial)
+  static Future<List<dynamic>> buscarProductosPorNombreParcial(String token, String nombre) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/productos/buscar-por-nombre-parcial')
+        .replace(queryParameters: {'nombre': nombre});
+
+    final respuesta = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (respuesta.statusCode == 200) {
+      final data = jsonDecode(respuesta.body);
+      return data['productos'];
+    } else {
+      final error = jsonDecode(respuesta.body);
+      throw Exception(error['detail'] ?? 'Error al buscar productos');
+    }
+  }
+
+  // Asigna un código de barras nuevo a un producto que ya existe en el inventario
+  static Future<Map<String, dynamic>> asignarCodigoAlterno({
+    required String token,
+    required int productoId,
+    required String codigoBarras,
+    int stockIngresado = 0,
+  }) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/productos/$productoId/asignar-codigo');
+
+    final respuesta = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'codigo_barras': codigoBarras,
+        'stock_ingresado': stockIngresado,
+      }),
+    );
+
+    if (respuesta.statusCode == 200) {
+      return jsonDecode(respuesta.body);
+    } else {
+      final error = jsonDecode(respuesta.body);
+      throw Exception(error['detail'] ?? 'Error al asignar el código al producto');
+    }
+  }
+
   // Registra una entrada o salida de stock
   static Future<Map<String, dynamic>> registrarMovimiento({
     required String token,
