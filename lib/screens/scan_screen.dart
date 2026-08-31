@@ -29,6 +29,7 @@ class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateM
 
   String? _ultimoCodigoEscaneado;
   bool _creandoProducto = false;
+  bool _productoRecienCreado = false;
   List<dynamic> _secciones = [];
   bool _seccionesCargadas = false;
 
@@ -204,8 +205,8 @@ Future<void> _onDetect(BarcodeCapture capture) async {
       setState(() {
         _producto = producto;
         _error = null;
+        _productoRecienCreado = true;
       });
-      _mostrarMensaje('Producto guardado correctamente');
     } catch (e) {
       if (!mounted) return;
       _mostrarMensaje(e.toString().replaceAll('Exception: ', ''), esError: true);
@@ -294,6 +295,7 @@ Future<void> _onDetect(BarcodeCapture capture) async {
     setState(() {
       _producto = null;
       _error = null;
+      _productoRecienCreado = false;
       _cantidadController.text = '1';
       _motivoController.clear();
       _tipoMovimiento = 'salida';
@@ -366,7 +368,9 @@ Future<void> _onDetect(BarcodeCapture capture) async {
               ]
             : null,
       ),
-      body: _producto == null ? _vistaCamara() : _vistaProducto(),
+      body: _producto == null
+          ? _vistaCamara()
+          : (_productoRecienCreado ? _vistaProductoCreado() : _vistaProducto()),
     );
   }
 
@@ -531,7 +535,98 @@ Future<void> _onDetect(BarcodeCapture capture) async {
       ],
     );
   }
-Widget _vistaProducto() {
+Widget _vistaProductoCreado() {
+    final nombre = _producto!['nombre'];
+    final categoria = _producto!['categoria'];
+    final stockActual = _producto!['stock_actual'];
+    final unidad = _producto!['unidad_medida'];
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.greenAccent.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_circle, color: Colors.greenAccent, size: 56),
+            ),
+            const SizedBox(height: 20),
+            Text('Producto creado', style: AppTextStyles.titulo(size: 20)),
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(color: AppColors.acento.withValues(alpha: 0.2)),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.negro2,
+                    AppColors.negro2.withValues(alpha: 0.9),
+                  ],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(nombre, style: AppTextStyles.cuerpo(size: 18, peso: FontWeight.w800)),
+                  if (categoria != null && categoria.toString().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(categoria, style: AppTextStyles.subtitulo()),
+                  ],
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.acento.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.inventory, size: 18, color: AppColors.acento),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Stock inicial: $stockActual $unidad',
+                          style: AppTextStyles.cuerpo(size: 16, peso: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _reiniciarEscaneo,
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Escanear otro producto'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.acento,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.boton)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _vistaProducto() {
     final stockActual = _producto!['stock_actual'];
     final unidad = _producto!['unidad_medida'];
     final String? fotoUrl = _producto!['foto_url'];
