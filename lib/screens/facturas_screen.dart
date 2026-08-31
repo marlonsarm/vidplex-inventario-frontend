@@ -57,7 +57,6 @@ class _FacturasScreenState extends State<FacturasScreen> {
   double? _tasa;
   String _orden = 'reciente'; // reciente | mayor | menor
   Map<String, dynamic>? _resumen;
-
   List<dynamic> get _facturasFiltradas {
     List<dynamic> lista = _facturas;
     if (_textoBusqueda.trim().isNotEmpty) {

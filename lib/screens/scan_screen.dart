@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -39,7 +40,7 @@ class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateM
     super.initState();
     _scanLineController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1700),
+      duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
   }
 
@@ -406,10 +407,32 @@ Future<void> _onDetect(BarcodeCapture capture) async {
                     top: cutout.bottom + 16,
                     left: 24,
                     right: 24,
-                    child: Text(
-                      _procesando ? 'Verificando código...' : 'Ubica el código dentro del recuadro',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.cuerpo(size: 13, color: Colors.white.withValues(alpha: 0.85)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _procesando ? Icons.sync : Icons.center_focus_strong,
+                            size: 16,
+                            color: AppColors.acento,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              _procesando ? 'Verificando código...' : 'Ubica el código dentro del recuadro',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.cuerpo(size: 13, color: Colors.white.withValues(alpha: 0.9)),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -421,15 +444,25 @@ Future<void> _onDetect(BarcodeCapture capture) async {
           top: 16,
           left: 16,
           right: 16,
-          child: ElevatedButton.icon(
-            onPressed: _abrirBusquedaManual,
-            icon: const Icon(Icons.keyboard),
-            label: const Text('Buscar por código manualmente'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.acento,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.boton)),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.boton),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: ElevatedButton.icon(
+                onPressed: _abrirBusquedaManual,
+                icon: const Icon(Icons.keyboard, size: 20),
+                label: Text('Buscar por código manualmente', style: AppTextStyles.cuerpo(size: 14, peso: FontWeight.w600)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white.withValues(alpha: 0.13),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.boton),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -440,9 +473,23 @@ Future<void> _onDetect(BarcodeCapture capture) async {
             right: 24,
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.negro2,
                 borderRadius: BorderRadius.circular(AppRadius.card),
-                border: Border.all(color: AppColors.rojoAlerta.withValues(alpha: 0.4)),
+                border: Border.all(color: AppColors.rojoAlerta.withValues(alpha: 0.5)),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.negro2,
+                    AppColors.negro2.withValues(alpha: 0.95),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.rojoAlerta.withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    spreadRadius: -4,
+                  ),
+                ],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -496,33 +543,93 @@ Widget _vistaProducto() {
         children: [
           if (fotoUrl != null)
             Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  '${AppConfig.baseUrl}$fotoUrl',
-                  height: 180,
-                  width: 180,
-                  fit: BoxFit.cover,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.acento.withValues(alpha: 0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.acento.withValues(alpha: 0.1),
+                      blurRadius: 20,
+                      spreadRadius: -4,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    '${AppConfig.baseUrl}$fotoUrl',
+                    height: 180,
+                    width: 180,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
           if (fotoUrl != null) const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.negro2,
               borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(color: AppColors.grisLinea),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, spreadRadius: -6, offset: const Offset(0, 8))],
+              border: Border.all(color: AppColors.acento.withValues(alpha: 0.2)),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.negro2,
+                  AppColors.negro2.withValues(alpha: 0.9),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(color: AppColors.acento.withValues(alpha: 0.08), blurRadius: 24, spreadRadius: -6, offset: const Offset(0, 8)),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_producto!['nombre'], style: AppTextStyles.titulo(size: 18)),
-                const SizedBox(height: 4),
-                Text('Código: ${_producto!['codigo_barras']}', style: AppTextStyles.subtitulo()),
-                const SizedBox(height: 12),
-                Text('Stock actual: $stockActual $unidad', style: AppTextStyles.cuerpo(size: 15, peso: FontWeight.w700)),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.acento.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.inventory_2_outlined, color: AppColors.acento, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_producto!['nombre'], style: AppTextStyles.titulo(size: 18)),
+                          const SizedBox(height: 2),
+                          Text('Código: ${_producto!['codigo_barras']}', style: AppTextStyles.subtitulo()),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.acento.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.inventory, size: 18, color: AppColors.acento),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Stock: $stockActual $unidad',
+                        style: AppTextStyles.cuerpo(size: 16, peso: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -532,20 +639,74 @@ Widget _vistaProducto() {
           Row(
             children: [
               Expanded(
-                child: ChoiceChip(
-                  label: const Text('Entrada (+)'),
-                  selected: _tipoMovimiento == 'entrada',
-                  onSelected: (_) => setState(() => _tipoMovimiento = 'entrada'),
-                  selectedColor: Colors.green[200],
+                child: GestureDetector(
+                  onTap: () => setState(() => _tipoMovimiento = 'entrada'),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.boton),
+                      border: Border.all(
+                        color: _tipoMovimiento == 'entrada' ? Colors.greenAccent.withValues(alpha: 0.7) : AppColors.grisLinea,
+                        width: _tipoMovimiento == 'entrada' ? 1.5 : 1,
+                      ),
+                      color: _tipoMovimiento == 'entrada' ? Colors.greenAccent.withValues(alpha: 0.1) : Colors.transparent,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_circle_outline,
+                          color: _tipoMovimiento == 'entrada' ? Colors.greenAccent : Colors.grey,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Entrada (+)',
+                          style: TextStyle(
+                            color: _tipoMovimiento == 'entrada' ? Colors.greenAccent : Colors.grey,
+                            fontWeight: _tipoMovimiento == 'entrada' ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ChoiceChip(
-                  label: const Text('Salida (-)'),
-                  selected: _tipoMovimiento == 'salida',
-                  onSelected: (_) => setState(() => _tipoMovimiento = 'salida'),
-                  selectedColor: Colors.red[200],
+                child: GestureDetector(
+                  onTap: () => setState(() => _tipoMovimiento = 'salida'),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.boton),
+                      border: Border.all(
+                        color: _tipoMovimiento == 'salida' ? Colors.redAccent.withValues(alpha: 0.7) : AppColors.grisLinea,
+                        width: _tipoMovimiento == 'salida' ? 1.5 : 1,
+                      ),
+                      color: _tipoMovimiento == 'salida' ? Colors.redAccent.withValues(alpha: 0.1) : Colors.transparent,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.remove_circle_outline,
+                          color: _tipoMovimiento == 'salida' ? Colors.redAccent : Colors.grey,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Salida (-)',
+                          style: TextStyle(
+                            color: _tipoMovimiento == 'salida' ? Colors.redAccent : Colors.grey,
+                            fontWeight: _tipoMovimiento == 'salida' ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -568,18 +729,30 @@ Widget _vistaProducto() {
             ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _procesando ? null : _confirmarMovimiento,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.acento,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.boton)),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.boton),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.acento.withValues(alpha: 0.35),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            child: _procesando
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
-                : const Text('Confirmar movimiento', style: TextStyle(fontSize: 16)),
+            child: ElevatedButton(
+              onPressed: _procesando ? null : _confirmarMovimiento,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.acento,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.boton)),
+              ),
+              child: _procesando
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
+                  : const Text('Confirmar movimiento', style: TextStyle(fontSize: 16)),
+            ),
           ),
           const SizedBox(height: 8),
           TextButton(
@@ -644,24 +817,53 @@ class _ScannerOverlayPainter extends CustomPainter {
     _drawCorner(canvas, cornerPaint, cutout.bottomRight, -1, -1, cornerLen);
     _drawCorner(canvas, cornerPaint, cutout.bottomLeft, 1, -1, cornerLen);
 
-    // Línea de escaneo animada con un leve resplandor.
+    // Línea de escaneo animada con resplandor neon.
     final lineY = cutout.top + cutout.height * scanLineY;
-    final glowRect = Rect.fromLTRB(cutout.left + 6, lineY - 9, cutout.right - 6, lineY + 9);
+
+    // Glow exterior amplio
+    final outerGlowRect = Rect.fromLTRB(cutout.left + 4, lineY - 16, cutout.right - 4, lineY + 16);
+    final outerGlowPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          frameColor.withValues(alpha: 0),
+          frameColor.withValues(alpha: 0.12),
+          frameColor.withValues(alpha: 0.2),
+          frameColor.withValues(alpha: 0.12),
+          frameColor.withValues(alpha: 0),
+        ],
+        stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+      ).createShader(outerGlowRect);
+    canvas.drawRect(outerGlowRect, outerGlowPaint);
+
+    // Glow interior más intenso
+    final glowRect = Rect.fromLTRB(cutout.left + 6, lineY - 8, cutout.right - 6, lineY + 8);
     final glowPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
           frameColor.withValues(alpha: 0),
-          frameColor.withValues(alpha: 0.45),
+          frameColor.withValues(alpha: 0.5),
+          frameColor.withValues(alpha: 0.7),
+          frameColor.withValues(alpha: 0.5),
           frameColor.withValues(alpha: 0),
         ],
+        stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
       ).createShader(glowRect);
     canvas.drawRect(glowRect, glowPaint);
 
+    // Línea central sólida con blur
     canvas.drawRect(
-      Rect.fromLTRB(cutout.left + 6, lineY - 1, cutout.right - 6, lineY + 1),
-      Paint()..color = frameColor,
+      Rect.fromLTRB(cutout.left + 8, lineY - 0.8, cutout.right - 8, lineY + 0.8),
+      Paint()
+        ..color = frameColor
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1),
+    );
+    canvas.drawRect(
+      Rect.fromLTRB(cutout.left + 8, lineY - 0.5, cutout.right - 8, lineY + 0.5),
+      Paint()..color = Colors.white,
     );
   }
 
