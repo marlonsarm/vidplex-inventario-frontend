@@ -686,11 +686,15 @@ Future<void> _onDetect(BarcodeCapture capture) async {
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
                         onPressed: _abrirBusquedaProductoExistente,
-                        icon: const Icon(Icons.inventory_2_outlined),
-                        label: const Text('Ya está en el inventario'),
+                        icon: const Icon(Icons.inventory_2_outlined, color: AppColors.acento),
+                        label: Text(
+                          'Ya está en el inventario',
+                          style: AppTextStyles.cuerpo(size: 14, peso: FontWeight.w700, color: AppColors.acento),
+                        ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
+                          backgroundColor: AppColors.acentoSuave,
+                          foregroundColor: AppColors.acento,
+                          side: BorderSide(color: AppColors.acento.withValues(alpha: 0.4)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.boton)),
                         ),
                       ),
