@@ -652,20 +652,25 @@ Future<void> _onDetect(BarcodeCapture capture) async {
                   ),
                 ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
+              child: SafeArea(
+                top: false,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.45),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.error_outline, color: AppColors.rojoAlerta),
-                        const SizedBox(width: 12),
-                        Expanded(child: Text(_error!, style: AppTextStyles.cuerpo(color: AppColors.rojoAlerta))),
-                        TextButton(onPressed: _reiniciarEscaneo, child: const Text('Reintentar')),
-                      ],
-                    ),
-                    if (widget.puedeCrearProductos && _ultimoCodigoEscaneado != null) ...[
+                        Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: AppColors.rojoAlerta),
+                            const SizedBox(width: 12),
+                            Expanded(child: Text(_error!, style: AppTextStyles.cuerpo(color: AppColors.rojoAlerta))),
+                            TextButton(onPressed: _reiniciarEscaneo, child: const Text('Reintentar')),
+                          ],
+                        ),
+                        if (widget.puedeCrearProductos && _ultimoCodigoEscaneado != null) ...[
                       const SizedBox(height: 8),
                       ElevatedButton.icon(
                         onPressed: _abrirFormularioNuevoProducto,
@@ -689,12 +694,14 @@ Future<void> _onDetect(BarcodeCapture capture) async {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.boton)),
                         ),
                       ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
+        ),
         if (_procesando || _creandoProducto)
           Container(
             color: Colors.black45,
