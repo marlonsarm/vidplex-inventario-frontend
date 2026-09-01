@@ -59,6 +59,10 @@ class UpdaterService {
     final request = http.Request('GET', Uri.parse(urlZip));
     final respuesta = await http.Client().send(request);
 
+    if (respuesta.statusCode != 200) {
+      throw Exception('El servidor respondió con un error (${respuesta.statusCode}) al descargar la actualización.');
+    }
+
     final total = respuesta.contentLength ?? 0;
     var recibido = 0;
 
@@ -76,6 +80,11 @@ class UpdaterService {
 
     final rutaExeApp = Platform.resolvedExecutable;
     final carpetaApp = File(rutaExeApp).parent.path;
+    final rutaUpdaterExe = '$carpetaApp\\Updater.exe';
+
+    if (!File(rutaUpdaterExe).existsSync()) {
+      throw Exception('No se encontró el actualizador (Updater.exe) junto a la aplicación.');
+    }
 
     await Process.start(
       '$carpetaApp\\Updater.exe',
