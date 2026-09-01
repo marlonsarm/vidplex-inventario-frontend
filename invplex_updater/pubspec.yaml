@@ -1,0 +1,12 @@
+name: invplex_updater
+description: Descarga y aplica actualizaciones del ejecutable de InvPlex en Windows.
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  http: ^1.6.0
+  archive: ^4.0.2
+  

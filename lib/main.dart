@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/actualizacion_requerida_screen.dart';
 import 'services/api_service.dart';
+import 'services/version_service.dart';
+import 'config.dart';
 import 'theme.dart';
 void main() {
   runApp(const InvPlexApp());
@@ -36,7 +39,27 @@ class _DecisorDeInicioState extends State<DecisorDeInicio> {
   @override
   void initState() {
     super.initState();
-    _revisarSesion();
+    _revisarVersionYSesion();
+  }
+
+  Future<void> _revisarVersionYSesion() async {
+    final info = await VersionService.obtenerInfoVersion();
+    final versionMinima = info.versionMinima;
+
+    if (versionMinima != null &&
+        VersionService.necesitaActualizar(AppConfig.appVersion, versionMinima)) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ActualizacionRequeridaScreen(
+            urlDescargaWindows: info.urlDescargaWindows,
+          ),
+        ),
+      );
+      return;
+    }
+
+    await _revisarSesion();
   }
 
   Future<void> _revisarSesion() async {

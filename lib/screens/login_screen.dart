@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
+import '../services/updater_service.dart';
 import '../theme.dart';
 import 'dashboard_screen.dart';
 
@@ -21,6 +22,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   bool _verPassword = false;
   String? _mensajeError;
 
+  bool _actualizacionRequerida = false;
+  bool _actualizando = false;
+  double _progresoActualizacion = 0.0;
+  String? _urlDescargaZip;
+  String? _errorActualizacion;
+
 late final AnimationController _brilloController;
   late final AnimationController _logoController;
   late final AnimationController _dotsController;
@@ -29,6 +36,7 @@ late final AnimationController _brilloController;
   void initState() {
     super.initState();
     _cargarCedulaGuardada();
+    _verificarActualizacion();
     _brilloController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
@@ -53,6 +61,188 @@ late final AnimationController _brilloController;
     }
   }
 
+  Future<void> _verificarActualizacion() async {
+    final resultado = await UpdaterService.verificarActualizacion();
+    if (resultado != null && mounted) {
+      setState(() {
+        _actualizacionRequerida = true;
+        _urlDescargaZip = resultado['url_descarga_windows'];
+      });
+    }
+  }
+
+  Future<void> _iniciarActualizacion() async {
+    if (_urlDescargaZip == null) return;
+    setState(() {
+      _actualizando = true;
+      _errorActualizacion = null;
+    });
+    try {
+      await UpdaterService.descargarYActualizar(
+        urlZip: _urlDescargaZip!,
+        onProgreso: (progreso) {
+          if (mounted) {
+            setState(() => _progresoActualizacion = progreso);
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _actualizando = false;
+          _errorActualizacion = 'No se pudo completar la actualización. Verifica tu conexión e inténtalo de nuevo.';
+        });
+      }
+    }
+  }
+
+  Widget _pantallaActualizacion() {
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF071231),
+                  Color(0xFF0B1E4D),
+                  AppColors.acentoOscuro,
+                  Color(0xFF0B1E4D),
+                ],
+                stops: [0.0, 0.35, 0.68, 1.0],
+              ),
+            ),
+          ),
+          Positioned(top: -160, right: -120, child: _blob(420, AppColors.acento.withValues(alpha: 0.35))),
+          Positioned(bottom: -200, left: -160, child: _blob(480, AppColors.dorado.withValues(alpha: 0.10))),
+          SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.97),
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.2),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 40, spreadRadius: -6, offset: const Offset(0, 22)),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(colors: [AppColors.acento, AppColors.acentoOscuro]),
+                                boxShadow: [
+                                  BoxShadow(color: AppColors.acento.withValues(alpha: 0.45), blurRadius: 28, spreadRadius: 2),
+                                ],
+                              ),
+                              child: Icon(
+                                _actualizando ? Icons.downloading_rounded : Icons.system_update_rounded,
+                                color: Colors.white,
+                                size: 34,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              'Nueva versión disponible',
+                              style: AppTextStyles.titulo(size: 19),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _actualizando
+                                  ? 'Descargando actualización, no cierres esta ventana...'
+                                  : 'Hay una nueva versión de InvPlex. Actualiza para continuar.',
+                              style: AppTextStyles.cuerpo(size: 13.5, color: AppColors.gris),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            if (_actualizando) ...[
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: LinearProgressIndicator(
+                                  value: _progresoActualizacion > 0 ? _progresoActualizacion : null,
+                                  minHeight: 10,
+                                  backgroundColor: AppColors.gris.withValues(alpha: 0.15),
+                                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.acento),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                '${(_progresoActualizacion * 100).clamp(0, 100).toStringAsFixed(0)}%',
+                                style: AppTextStyles.cuerpo(size: 13, color: AppColors.gris, peso: FontWeight.w700),
+                              ),
+                            ] else ...[
+                              if (_errorActualizacion != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.rojoAlerta.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: AppColors.rojoAlerta.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Text(
+                                    _errorActualizacion!,
+                                    style: AppTextStyles.cuerpo(size: 13, color: AppColors.rojoAlerta),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                              ],
+                              Container(
+                                height: 54,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(AppRadius.boton),
+                                  gradient: const LinearGradient(colors: [AppColors.acento, AppColors.acentoOscuro], begin: Alignment.centerLeft, end: Alignment.centerRight),
+                                  boxShadow: [
+                                    BoxShadow(color: AppColors.acento.withValues(alpha: 0.45), blurRadius: 22, spreadRadius: -4, offset: const Offset(0, 10)),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(AppRadius.boton),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(AppRadius.boton),
+                                    onTap: _iniciarActualizacion,
+                                    child: Center(
+                                      child: Text(
+                                        'ACTUALIZAR AHORA',
+                                        style: AppTextStyles.cuerpo(size: 14.5, color: Colors.white, peso: FontWeight.w800).copyWith(letterSpacing: 1.2),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   Future<void> _iniciarSesion() async {
     setState(() {
       _cargando = true;
@@ -284,6 +474,9 @@ late final AnimationController _brilloController;
   }
   @override
   Widget build(BuildContext context) {
+    if (_actualizacionRequerida) {
+      return _pantallaActualizacion();
+    }
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
