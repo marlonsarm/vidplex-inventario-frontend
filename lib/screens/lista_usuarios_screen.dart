@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../config.dart';
 import '../theme.dart';
@@ -136,7 +138,7 @@ Future<void> _verificarPendiente(Map pendiente) async {
     if (!mounted) return;
 
     try {
-      await ApiService.verificarUsuarioPendiente(
+      final activado = await ApiService.verificarUsuarioPendiente(
         token: widget.token,
         pendienteId: pendiente['id'],
         password: passwordController.text,
@@ -145,11 +147,47 @@ Future<void> _verificarPendiente(Map pendiente) async {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Usuario verificado correctamente'), backgroundColor: Colors.green),
       );
+      await _ofrecerFotoTrasVerificar(activado['id'], activado['nombre_completo'] ?? '');
       _cargarUsuarios();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _ofrecerFotoTrasVerificar(int usuarioId, String nombre) async {
+    if (!mounted) return;
+    final quiereFoto = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Agregar foto?'),
+        content: Text('¿Quieres agregarle una foto a $nombre ahora?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Ahora no')),
+          ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Elegir foto')),
+        ],
+      ),
+    );
+
+    if (quiereFoto != true || !mounted) return;
+
+    final picker = ImagePicker();
+    final XFile? archivo = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 1200);
+    if (archivo == null) return;
+
+    final Uint8List bytes = await archivo.readAsBytes();
+    try {
+      await ApiService.subirFotoUsuario(widget.token, usuarioId, bytes, archivo.name);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto agregada'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo subir la foto: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
       );
     }
   }

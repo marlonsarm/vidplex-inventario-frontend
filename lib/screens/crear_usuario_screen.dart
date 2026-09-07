@@ -14,6 +14,7 @@ class CrearUsuarioScreen extends StatefulWidget {
 }
 
 class _CrearUsuarioScreenState extends State<CrearUsuarioScreen> {
+  static const int _idCuartoMantenimiento = 1;
   final _formKey = GlobalKey<FormState>();
 
   final _nombreController = TextEditingController();
@@ -64,15 +65,17 @@ class _CrearUsuarioScreenState extends State<CrearUsuarioScreen> {
     if (_categoriasDisponibles.containsKey(seccionId)) return;
     setState(() => _cargandoCategoriasDe.add(seccionId));
     try {
-      final categorias = await ApiService.getCategorias(widget.token, seccionId);
-      setState(() => _categoriasDisponibles[seccionId] = categorias);
+      final categorias = seccionId == _idCuartoMantenimiento
+          ? await ApiService.getResponsables(widget.token)
+          : await ApiService.getCategorias(widget.token, seccionId);
+      final filtradas = categorias.where((c) => _nombreCategoria(c) != '__sin_categoria__').toList();
+      setState(() => _categoriasDisponibles[seccionId] = filtradas);
     } catch (e) {
       // si falla, simplemente no se muestran categorías para elegir
     } finally {
       setState(() => _cargandoCategoriasDe.remove(seccionId));
     }
   }
-
   String _nombreCategoria(dynamic item) {
     if (item is String) return item;
     if (item is Map) return (item['categoria'] ?? item['nombre'] ?? '').toString();
@@ -122,6 +125,18 @@ class _CrearUsuarioScreenState extends State<CrearUsuarioScreen> {
 
   Future<void> _guardarUsuario() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (!_esSuperAdmin &&
+        _seccionesActivas.contains(_idCuartoMantenimiento) &&
+        (_categoriasSeleccionadas[_idCuartoMantenimiento] ?? []).isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Elige al menos un responsable (Jaime/Rafa/David) para Cuarto de Mantenimiento'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     setState(() => _guardando = true);
 

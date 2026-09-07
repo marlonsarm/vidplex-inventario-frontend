@@ -16,6 +16,7 @@ class EditarUsuarioScreen extends StatefulWidget {
 
 class _EditarUsuarioScreenState extends State<EditarUsuarioScreen> {
   static const Color _azul = AppColors.acento;
+  static const int _idCuartoMantenimiento = 1;
 
   late final TextEditingController _nombreController;
   late final TextEditingController _cedulaController;
@@ -89,8 +90,11 @@ class _EditarUsuarioScreenState extends State<EditarUsuarioScreen> {
     if (_categoriasDisponibles.containsKey(seccionId)) return;
     setState(() => _cargandoCategoriasDe.add(seccionId));
     try {
-      final categorias = await ApiService.getCategorias(widget.token, seccionId);
-      setState(() => _categoriasDisponibles[seccionId] = categorias);
+      final categorias = seccionId == _idCuartoMantenimiento
+          ? await ApiService.getResponsables(widget.token)
+          : await ApiService.getCategorias(widget.token, seccionId);
+      final filtradas = categorias.where((c) => _nombreCategoria(c) != '__sin_categoria__').toList();
+      setState(() => _categoriasDisponibles[seccionId] = filtradas);
     } catch (e) {
       // si falla, simplemente no se muestran categorías para elegir
     } finally {
@@ -156,6 +160,18 @@ class _EditarUsuarioScreenState extends State<EditarUsuarioScreen> {
   }
 
   Future<void> _guardar() async {
+    if (!_esSuperAdmin &&
+        _seccionesActivas.contains(_idCuartoMantenimiento) &&
+        (_categoriasSeleccionadas[_idCuartoMantenimiento] ?? []).isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Elige al menos un responsable (Jaime/Rafa/David) para Cuarto de Mantenimiento'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() => _guardando = true);
     try {
       if (_imagenBytes != null) {

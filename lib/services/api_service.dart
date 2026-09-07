@@ -34,6 +34,7 @@ class ApiService {
     String token, {
     int? seccionId,
     String? categoria,
+    String? responsable,
     String? buscar,
     int pagina = 1,
     int porPagina = 50,
@@ -44,6 +45,7 @@ class ApiService {
     };
     if (seccionId != null) params['seccion_id'] = '$seccionId';
     if (categoria != null) params['categoria'] = categoria;
+    if (responsable != null) params['responsable'] = responsable;
     if (buscar != null && buscar.isNotEmpty) params['buscar'] = buscar;
 
     final url = Uri.parse('${AppConfig.baseUrl}/productos/').replace(queryParameters: params);
@@ -564,6 +566,9 @@ class ApiService {
     String? codigoBarras,
     String? nombre,
     String? categoria,
+    String? responsable,
+    String? ubicacion,
+    int? seccionId,
     int? stockMinimo,
     String? unidadMedida,
   }) async {
@@ -573,6 +578,9 @@ class ApiService {
     if (codigoBarras != null) body['codigo_barras'] = codigoBarras;
     if (nombre != null) body['nombre'] = nombre;
     if (categoria != null) body['categoria'] = categoria;
+    if (responsable != null) body['responsable'] = responsable;
+    if (ubicacion != null) body['ubicacion'] = ubicacion;
+    if (seccionId != null) body['seccion_id'] = seccionId;
     if (stockMinimo != null) body['stock_minimo'] = stockMinimo;
     if (unidadMedida != null) body['unidad_medida'] = unidadMedida;
 
@@ -797,6 +805,17 @@ class ApiService {
     }
   }
 
+  // Trae los 3 responsables fijos de Cuarto de Mantenimiento (Jaime/Rafa/David), con su conteo
+  static Future<List<dynamic>> getResponsables(String token) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/productos/responsables');
+    final respuesta = await http.get(url, headers: {'Authorization': 'Bearer $token'});
+    if (respuesta.statusCode == 200) {
+      return jsonDecode(respuesta.body);
+    } else {
+      throw Exception('No se pudieron cargar los responsables');
+    }
+  }
+
   // Trae las subcategorías (carpetas) de una sección, con su conteo
   static Future<List<dynamic>> getCategorias(String token, int seccionId) async {
     final url = Uri.parse('${AppConfig.baseUrl}/productos/categorias')
@@ -805,7 +824,8 @@ class ApiService {
     if (respuesta.statusCode == 200) {
       return jsonDecode(respuesta.body);
     } else {
-      throw Exception('No se pudieron cargar las categorías');
+      final error = jsonDecode(respuesta.body);
+      throw Exception(error['detail'] ?? 'No se pudieron cargar las categorías (código ${respuesta.statusCode})');
     }
   }
 

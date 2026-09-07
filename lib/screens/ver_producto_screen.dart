@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 import '../theme.dart';
 import '../services/api_service.dart';
@@ -27,11 +28,46 @@ class VerProductoScreen extends StatefulWidget {
 
 class _VerProductoScreenState extends State<VerProductoScreen> {
   late Map<String, dynamic> _producto;
+  bool _esSuperAdmin = false;
+  List<dynamic> _secciones = [];
+  String _nombreAlmacenActual = '';
+  bool _huboCambios = false;
+
+  static const int _idCuartoMantenimiento = 1;
+  bool get _enCuartoMantenimiento => _producto['seccion_id'] == _idCuartoMantenimiento;
+
+  String _nombreInventario(String nombreCrudo) {
+    if (nombreCrudo.toLowerCase().contains('mantenimiento')) return 'Inventario de Herramientas';
+    return 'Inventario $nombreCrudo';
+  }
 
   @override
   void initState() {
     super.initState();
     _producto = widget.producto;
+    _cargarAlmacen();
+  }
+
+  Future<void> _cargarAlmacen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final esAdmin = prefs.getBool('es_super_admin') ?? false;
+      final secciones = esAdmin
+          ? await ApiService.getTodasLasSecciones(widget.token)
+          : await ApiService.getSecciones(widget.token);
+      if (!mounted) return;
+      final actual = secciones.firstWhere(
+        (s) => s['id'] == _producto['seccion_id'],
+        orElse: () => null,
+      );
+      setState(() {
+        _esSuperAdmin = esAdmin;
+        _secciones = secciones;
+        _nombreAlmacenActual = actual != null ? actual['nombre'] : 'Sin almacén';
+      });
+    } catch (e) {
+      // si falla, la fila de almacén simplemente muestra "Sin almacén"
+    }
   }
 
   Widget _filaDato(IconData icono, String etiqueta, String valor) {
@@ -61,6 +97,176 @@ class _VerProductoScreenState extends State<VerProductoScreen> {
         ],
       ),
     );
+  }
+  Future<void> _moverDeAlmacenRapido() async {
+    if (_secciones.isEmpty) return;
+
+    final nuevoAlmacenId = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: AppColors.negro2,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Mover a inventario', style: AppTextStyles.titulo(size: 16)),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _secciones.map((s) {
+                  final esActual = s['id'] == _producto['seccion_id'];
+                  return ActionChip(
+                    label: Text(
+                      _nombreInventario(s['nombre']),
+                      style: AppTextStyles.cuerpo(size: 12.5, color: esActual ? Colors.white : AppColors.acento),
+                    ),
+                    backgroundColor: esActual ? AppColors.acento : AppColors.acentoSuave,
+                    side: BorderSide(color: AppColors.acento.withValues(alpha: esActual ? 1 : 0.3)),
+                    onPressed: esActual ? null : () => Navigator.of(context).pop(s['id'] as int),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (nuevoAlmacenId == null || !context.mounted) return;
+
+    try {
+      final actualizado = await ApiService.editarProducto(
+        token: widget.token,
+        productoId: _producto['id'],
+        seccionId: nuevoAlmacenId,
+      );
+      if (!context.mounted) return;
+      final nuevoNombre = _secciones.firstWhere((s) => s['id'] == nuevoAlmacenId)['nombre'];
+      setState(() {
+        _producto = {..._producto, 'seccion_id': actualizado['seccion_id']};
+        _nombreAlmacenActual = nuevoNombre;
+        _huboCambios = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Movido a "$nuevoNombre"'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _moverResponsableRapido() async {
+    const opciones = ['HERRAMIENTAS JAIME', 'HERRAMIENTAS RAFA', 'HERRAMIENTAS DAVID'];
+
+    final nuevoResponsable = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.negro2,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Reasignar herramienta a', style: AppTextStyles.titulo(size: 16)),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: opciones.map((persona) {
+                  final esActual = persona == _producto['responsable'];
+                  return ActionChip(
+                    label: Text(persona, style: AppTextStyles.cuerpo(size: 12.5, color: esActual ? Colors.white : AppColors.acento)),
+                    backgroundColor: esActual ? AppColors.acento : AppColors.acentoSuave,
+                    side: BorderSide(color: AppColors.acento.withValues(alpha: esActual ? 1 : 0.3)),
+                    onPressed: esActual ? null : () => Navigator.of(context).pop(persona),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (nuevoResponsable == null || !context.mounted) return;
+
+    try {
+      final actualizado = await ApiService.editarProducto(
+        token: widget.token,
+        productoId: _producto['id'],
+        responsable: nuevoResponsable,
+      );
+      if (!context.mounted) return;
+      setState(() {
+        _producto = {..._producto, 'responsable': actualizado['responsable']};
+        _huboCambios = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Reasignado a "$nuevoResponsable"'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _editarUbicacionRapido() async {
+    final controller = TextEditingController(text: _producto['ubicacion'] ?? '');
+
+    final nuevaUbicacion = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ubicación actual'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Ej: Oficina del jefe, Bodega, Restaurante...', border: OutlineInputBorder()),
+          onSubmitted: (valor) => Navigator.of(context).pop(valor.trim()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.of(context).pop(controller.text.trim()), child: const Text('Guardar')),
+        ],
+      ),
+    );
+
+    if (nuevaUbicacion == null || !context.mounted) return;
+
+    try {
+      final actualizado = await ApiService.editarProducto(
+        token: widget.token,
+        productoId: _producto['id'],
+        ubicacion: nuevaUbicacion,
+      );
+      if (!context.mounted) return;
+      setState(() {
+        _producto = {..._producto, 'ubicacion': actualizado['ubicacion']};
+        _huboCambios = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ubicación actualizada'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+      );
+    }
   }
 
   Future<void> _registrarMovimiento(String tipo) async {
@@ -127,6 +333,7 @@ class _VerProductoScreenState extends State<VerProductoScreen> {
       if (!context.mounted) return;
       setState(() {
         _producto = {..._producto, 'stock_actual': resultado['stock_resultante']};
+        _huboCambios = true;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Listo, nuevo stock: ${resultado['stock_resultante']}'), backgroundColor: Colors.green),
@@ -145,7 +352,13 @@ class _VerProductoScreenState extends State<VerProductoScreen> {
     const acento = AppColors.acento;
     final anchoPantalla = MediaQuery.of(context).size.width;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        Navigator.of(context).pop(_huboCambios);
+      },
+      child: Scaffold(
       backgroundColor: AppColors.negro,
       appBar: AppBar(
         elevation: 0,
@@ -306,7 +519,59 @@ class _VerProductoScreenState extends State<VerProductoScreen> {
               children: [
                 _filaDato(Icons.qr_code, 'Código', _producto['codigo_barras'] ?? 'Sin código'),
                 const Divider(height: 1, color: AppColors.grisLinea, thickness: 1),
-                _filaDato(Icons.category_outlined, 'Categoría', _producto['categoria'] ?? '-'),
+                _esSuperAdmin
+                    ? InkWell(
+                        onTap: _moverDeAlmacenRapido,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(child: _filaDato(Icons.warehouse_outlined, 'Inventario', _nombreAlmacenActual.isEmpty ? '...' : _nombreInventario(_nombreAlmacenActual))),
+                              const Icon(Icons.chevron_right, size: 18, color: AppColors.gris),
+                            ],
+                          ),
+                        ),
+                      )
+                    : _filaDato(Icons.warehouse_outlined, 'Inventario', _nombreAlmacenActual.isEmpty ? '...' : _nombreInventario(_nombreAlmacenActual)),
+                if (_enCuartoMantenimiento) ...[
+                  if (_esSuperAdmin) ...[
+                    const Divider(height: 1, color: AppColors.grisLinea, thickness: 1),
+                    InkWell(
+                      onTap: _moverResponsableRapido,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(child: _filaDato(Icons.person_outline, 'Pertenece a', (_producto['responsable'] ?? '').toString().isEmpty ? 'Sin asignar' : _producto['responsable'])),
+                            const Icon(Icons.chevron_right, size: 18, color: AppColors.gris),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1, color: AppColors.grisLinea, thickness: 1),
+                    InkWell(
+                      onTap: _editarUbicacionRapido,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(child: _filaDato(Icons.location_on_outlined, 'Ubicación', (_producto['ubicacion'] ?? '').toString().isEmpty ? 'Sin definir' : _producto['ubicacion'])),
+                            const Icon(Icons.chevron_right, size: 18, color: AppColors.gris),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    if ((_producto['responsable'] ?? '').toString().isNotEmpty) ...[
+                      const Divider(height: 1, color: AppColors.grisLinea, thickness: 1),
+                      _filaDato(Icons.person_outline, 'Pertenece a', _producto['responsable']),
+                    ],
+                    if ((_producto['ubicacion'] ?? '').toString().isNotEmpty) ...[
+                      const Divider(height: 1, color: AppColors.grisLinea, thickness: 1),
+                      _filaDato(Icons.location_on_outlined, 'Ubicación', _producto['ubicacion']),
+                    ],
+                  ],
+                ],
                 const Divider(height: 1, color: AppColors.grisLinea, thickness: 1),
                 _filaDato(Icons.warning_amber_outlined, 'Stock mínimo', '${_producto['stock_minimo']}'),
               ],
@@ -339,6 +604,7 @@ class _VerProductoScreenState extends State<VerProductoScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

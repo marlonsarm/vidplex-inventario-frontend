@@ -52,6 +52,7 @@ class DashboardScreen extends StatefulWidget {
 
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  String? _fotoUrl;
   List<dynamic> _productos = [];
   List<dynamic> _secciones = [];
   int? _seccionSeleccionada;
@@ -75,6 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _fotoUrl = widget.fotoUrl;
     PaintingBinding.instance.imageCache.maximumSize = 300;
     PaintingBinding.instance.imageCache.maximumSizeBytes = 150 << 20; // 150 MB
     _cargarSecciones();
@@ -103,7 +105,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // no bloquea el resto del dashboard
     }
   }
-
   Future<void> _seleccionarSeccion(int? seccionId) async {
     setState(() {
       _seccionSeleccionada = seccionId;
@@ -116,12 +117,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return;
     }
 
+    const int idCuartoMantenimiento = 1;
+
+    // Solo Cuarto de Mantenimiento usa carpetas (responsables). El resto de
+    // almacenes entra directo a la lista de productos, sin preguntar categoría.
+    if (seccionId != idCuartoMantenimiento) {
+      _cargarProductos();
+      return;
+    }
+
     setState(() => _cargandoCategorias = true);
     try {
-      final categorias = await ApiService.getCategorias(widget.token, seccionId);
+      final categorias = await ApiService.getResponsables(widget.token);
       setState(() => _categorias = categorias);
       if (categorias.isEmpty) {
         _cargarProductos();
+      } else if (categorias.length == 1) {
+        // Si el usuario solo tiene acceso a una categoría/responsable (ej: Jaime
+        // solo ve sus propias herramientas), no tiene sentido mostrarle una
+        // carpeta con un solo ícono adentro — vamos directo a la lista.
+        _seleccionarCategoria(categorias.first['categoria']);
       }
     } catch (e) {
       // si falla, se comporta como sección sin categorías
@@ -144,6 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _cargarProductos() async {
+    const int idCuartoMantenimiento = 1;
     setState(() {
       _cargando = true;
       _error = null;
@@ -154,7 +170,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final resultado = await ApiService.getProductos(
         widget.token,
         seccionId: _seccionSeleccionada,
-        categoria: _categoriaSeleccionada,
+        categoria: _seccionSeleccionada == idCuartoMantenimiento ? null : _categoriaSeleccionada,
+        responsable: _seccionSeleccionada == idCuartoMantenimiento ? _categoriaSeleccionada : null,
         buscar: _textoBusqueda.isEmpty ? null : _textoBusqueda,
         pagina: 1,
       );
@@ -546,7 +563,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
 Widget _bannerBienvenida() {
-  final tieneFoto = widget.fotoUrl != null && widget.fotoUrl!.isNotEmpty;
+  final tieneFoto = _fotoUrl != null && _fotoUrl!.isNotEmpty;
 
   const fondoOscuro = Color(0xFF161618);
   const plataClaro = Color(0xFFE4E4E7);
@@ -729,10 +746,16 @@ Widget _bannerBienvenida() {
                               icono: Icons.person_outline,
                               tooltip: 'Mi perfil',
                               color: plataClaro,
-                              onPressed: () {
-                                Navigator.of(context).push(
+                              onPressed: () async {
+                                await Navigator.of(context).push(
                                   MaterialPageRoute(builder: (_) => PerfilUsuarioScreen(token: widget.token)),
                                 );
+                                try {
+                                  final perfil = await ApiService.obtenerPerfil(widget.token);
+                                  if (mounted) setState(() => _fotoUrl = perfil['foto_url']);
+                                } catch (e) {
+                                  // si falla, simplemente se queda con la foto que ya tenía
+                                }
                               },
                             ),
                             _accionCirculo(
@@ -783,7 +806,7 @@ Widget _bannerBienvenida() {
                                     color: Colors.white.withValues(alpha: 0.08),
                                     image: tieneFoto
                                         ? DecorationImage(
-                                            image: NetworkImage('${AppConfig.baseUrl}${widget.fotoUrl}'),
+                                            image: NetworkImage('${AppConfig.baseUrl}$_fotoUrl'),
                                             fit: BoxFit.cover,
                                             alignment: Alignment.center,
                                           )

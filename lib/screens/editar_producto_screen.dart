@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../theme.dart';
 
@@ -24,6 +25,21 @@ class _EditarProductoScreenState extends State<EditarProductoScreen> {
   Uint8List? _imagenBytes;
   String? _imagenNombre;
   bool _guardando = false;
+  bool _esSuperAdmin = false;
+  bool _seccionesCargadas = false;
+  List<dynamic> _secciones = [];
+  int? _seccionSeleccionada;
+  late final TextEditingController _ubicacionController;
+  late final TextEditingController _responsableController;
+
+  static const int _idCuartoMantenimiento = 1;
+  static const List<String> _categoriasCuartoMantenimiento = [
+    'HERRAMIENTAS JAIME',
+    'HERRAMIENTAS RAFA',
+    'HERRAMIENTAS DAVID',
+  ];
+
+  bool get _enCuartoMantenimiento => (_seccionSeleccionada ?? widget.producto['seccion_id']) == _idCuartoMantenimiento;
 
   @override
   void initState() {
@@ -33,13 +49,64 @@ class _EditarProductoScreenState extends State<EditarProductoScreen> {
     _categoriaController = TextEditingController(text: widget.producto['categoria'] ?? '');
     _stockMinimoController = TextEditingController(text: '${widget.producto['stock_minimo']}');
     _unidadController = TextEditingController(text: widget.producto['unidad_medida'] ?? 'unidad');
+    _ubicacionController = TextEditingController(text: widget.producto['ubicacion'] ?? '');
+    _responsableController = TextEditingController(text: widget.producto['responsable'] ?? '');
+    _seccionSeleccionada = widget.producto['seccion_id'] as int?;
+    _cargarPermisoAdmin();
+  }
+
+  Future<void> _cargarPermisoAdmin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final esAdmin = prefs.getBool('es_super_admin') ?? false;
+    setState(() => _esSuperAdmin = esAdmin);
+    if (esAdmin) {
+      try {
+        final secciones = await ApiService.getTodasLasSecciones(widget.token);
+        if (!mounted) return;
+        setState(() {
+          _secciones = secciones;
+          _seccionesCargadas = true;
+        });
+      } catch (e) {
+        // si falla, el dropdown simplemente no se muestra con opciones; se puede reintentar reabriendo la pantalla
+      }
+    }
   }
 
   Future<void> _elegirImagen() async {
+    final ImageSource? origen = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.negro2,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined, color: AppColors.acento),
+              title: Text('Tomar foto', style: AppTextStyles.cuerpo(size: 14.5)),
+              onTap: () => Navigator.of(context).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined, color: AppColors.acento),
+              title: Text('Elegir de la galería', style: AppTextStyles.cuerpo(size: 14.5)),
+              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (origen == null) return;
+
     final picker = ImagePicker();
-    final XFile? archivo = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 1200);
+    final XFile? archivo = await picker.pickImage(source: origen, imageQuality: 80, maxWidth: 1200);
     if (archivo == null) return;
     final bytes = await archivo.readAsBytes();
+    if (!mounted) return;
     setState(() {
       _imagenBytes = bytes;
       _imagenNombre = archivo.name;
@@ -52,13 +119,18 @@ class _EditarProductoScreenState extends State<EditarProductoScreen> {
       if (_imagenBytes != null) {
         await ApiService.subirFotoProducto(widget.token, widget.producto['id'], _imagenBytes!, _imagenNombre ?? 'foto.jpg');
       }
-
+      final seccionCambio = _esSuperAdmin && _seccionSeleccionada != widget.producto['seccion_id'];
       await ApiService.editarProducto(
         token: widget.token,
         productoId: widget.producto['id'],
         codigoBarras: _codigoController.text.trim(),
         nombre: _nombreController.text.trim(),
-        categoria: _categoriaController.text.trim(),
+        categoria: _categoriaController.text.trim().isEmpty ? null : _categoriaController.text.trim(),
+        responsable: _enCuartoMantenimiento && _esSuperAdmin && _responsableController.text.trim().isNotEmpty
+            ? _responsableController.text.trim()
+            : null,
+        ubicacion: _enCuartoMantenimiento && _esSuperAdmin ? _ubicacionController.text.trim() : null,
+        seccionId: seccionCambio ? _seccionSeleccionada : null,
         stockMinimo: int.tryParse(_stockMinimoController.text) ?? widget.producto['stock_minimo'],
         unidadMedida: _unidadController.text.trim(),
       );
@@ -119,6 +191,8 @@ class _EditarProductoScreenState extends State<EditarProductoScreen> {
     _categoriaController.dispose();
     _stockMinimoController.dispose();
     _unidadController.dispose();
+    _ubicacionController.dispose();
+    _responsableController.dispose();
     super.dispose();
   }
   Widget _tituloSeccion(IconData icono, String texto) {
@@ -260,15 +334,77 @@ class _EditarProductoScreenState extends State<EditarProductoScreen> {
                   style: AppTextStyles.cuerpo(size: 14.5),
                   decoration: _decoracion('Código de barras', icono: Icons.qr_code_2),
                 ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _categoriaController,
-                  style: AppTextStyles.cuerpo(size: 14.5),
-                  decoration: _decoracion('Categoría', icono: Icons.folder_outlined),
-                ),
+                if (!_enCuartoMantenimiento) ...[
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _categoriaController,
+                    style: AppTextStyles.cuerpo(size: 14.5),
+                    decoration: _decoracion('Categoría', icono: Icons.category_outlined),
+                  ),
+                ],
+                if (_enCuartoMantenimiento) ...[
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<String>(
+                    initialValue: _categoriasCuartoMantenimiento.contains(_responsableController.text)
+                        ? _responsableController.text
+                        : null,
+                    dropdownColor: AppColors.negro2,
+                    style: AppTextStyles.cuerpo(size: 14.5),
+                    decoration: _decoracion('Herramientas de', icono: Icons.folder_outlined),
+                    hint: Text('Selecciona a quién pertenece', style: AppTextStyles.subtitulo(size: 13)),
+                    items: _categoriasCuartoMantenimiento
+                        .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                        .toList(),
+                    onChanged: (valor) => setState(() => _responsableController.text = valor ?? ''),
+                  ),
+                  if (_esSuperAdmin) ...[
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _ubicacionController,
+                      style: AppTextStyles.cuerpo(size: 14.5),
+                      decoration: _decoracion('Ubicación actual', icono: Icons.location_on_outlined),
+                    ),
+                  ] else if (_ubicacionController.text.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(color: AppColors.acentoSuave, borderRadius: BorderRadius.circular(10)),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 16, color: AppColors.acento),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text('Ubicación: ${_ubicacionController.text}', style: AppTextStyles.cuerpo(size: 12.5, color: AppColors.acento))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
+          if (_esSuperAdmin) ...[
+            _tituloSeccion(Icons.warehouse_outlined, 'ALMACÉN / SECCIÓN (SOLO ADMIN)'),
+            _tarjeta(
+              child: _seccionesCargadas
+                  ? DropdownButtonFormField<int>(
+                      initialValue: _seccionSeleccionada,
+                      dropdownColor: AppColors.negro2,
+                      style: AppTextStyles.cuerpo(size: 14.5),
+                      decoration: _decoracion('Sección actual', icono: Icons.warehouse_outlined),
+                      items: _secciones
+                          .map<DropdownMenuItem<int>>(
+                            (s) => DropdownMenuItem(value: s['id'], child: Text(s['nombre'])),
+                          )
+                          .toList(),
+                      onChanged: (valor) => setState(() => _seccionSeleccionada = valor),
+                    )
+                  : const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text('Cargando secciones...', style: TextStyle(color: Colors.grey)),
+                    ),
+            ),
+          ],
           _tituloSeccion(Icons.numbers_rounded, 'STOCK'),
           _tarjeta(
             child: Column(

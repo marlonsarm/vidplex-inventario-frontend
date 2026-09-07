@@ -53,6 +53,7 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
   }
 
   Future<void> _cambiarFoto() async {
+    if (_perfil?['es_super_admin'] != true) return;
     final picker = ImagePicker();
     final XFile? archivo = await picker.pickImage(
       source: ImageSource.gallery,
@@ -113,7 +114,7 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
       child: Column(
         children: [
           GestureDetector(
-            onTap: _subiendoFoto ? null : _cambiarFoto,
+            onTap: (!esSuperAdmin || _subiendoFoto) ? null : _cambiarFoto,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -149,21 +150,22 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                             )
                           : null,
                 ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.acento,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.negro2, width: 2.5),
+                if (esSuperAdmin)
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.acento,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.negro2, width: 2.5),
+                      ),
+                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
                     ),
-                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
                   ),
-                ),
               ],
             ),
           ),
