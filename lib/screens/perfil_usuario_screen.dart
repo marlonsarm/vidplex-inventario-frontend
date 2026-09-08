@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 import '../config.dart';
@@ -34,8 +35,14 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
       _error = null;
     });
     try {
-      final perfil = await ApiService.obtenerPerfil(widget.token);
-      final movimientos = await ApiService.getHistorialUsuario(widget.token, perfil['id']);
+      final perfil = await ApiService.obtenerPerfil(widget.token).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('El servidor está tardando demasiado en responder. Intenta de nuevo.'),
+      );
+      final movimientos = await ApiService.getHistorialUsuario(widget.token, perfil['id']).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('El servidor está tardando demasiado en responder. Intenta de nuevo.'),
+      );
       setState(() {
         _perfil = perfil;
         _movimientos = movimientos;
@@ -50,6 +57,45 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
   String _formatearFecha(String fechaIso) {
     final fecha = DateTime.parse(fechaIso);
     return DateFormat('dd/MM/yyyy hh:mm a').format(fecha);
+  }
+
+  Future<void> _eliminarMovimiento(int movimientoId) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.negro2,
+        title: const Text('Eliminar movimiento'),
+        content: const Text('¿Seguro que quieres eliminar este movimiento del historial? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('Eliminar', style: TextStyle(color: AppColors.rojoAlerta)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      await ApiService.eliminarMovimiento(widget.token, movimientoId);
+      if (!mounted) return;
+      setState(() {
+        _movimientos.removeWhere((mov) => mov['id'] == movimientoId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Movimiento eliminado'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AppColors.rojoAlerta),
+      );
+    }
   }
 
   Future<void> _cambiarFoto() async {
@@ -114,9 +160,8 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
       child: Column(
         children: [
           GestureDetector(
-            onTap: (!esSuperAdmin || _subiendoFoto) ? null : _cambiarFoto,
+            onTap: _cambiarFoto,
             child: Stack(
-              clipBehavior: Clip.none,
               children: [
                 Container(
                   width: 112,
@@ -136,7 +181,7 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                         ? DecorationImage(image: MemoryImage(_imagenBytes!), fit: BoxFit.cover)
                         : (fotoUrl != null && fotoUrl.toString().isNotEmpty)
                             ? DecorationImage(
-                                image: NetworkImage('${AppConfig.baseUrl}$fotoUrl'),
+                                image: CachedNetworkImageProvider('${AppConfig.baseUrl}$fotoUrl'),
                                 fit: BoxFit.cover,
                               )
                             : null,
@@ -206,7 +251,19 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
         child: _cargando
             ? const Center(child: CircularProgressIndicator(color: AppColors.acento))
             : _error != null
-                ? Center(child: Text(_error!, style: AppTextStyles.cuerpo(color: AppColors.rojoAlerta)))
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!, style: AppTextStyles.cuerpo(color: AppColors.rojoAlerta), textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _cargarDatos,
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  )
                 : ListView(
                     padding: const EdgeInsets.only(bottom: 24),
                     children: [
@@ -282,6 +339,12 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                                   'Stock: ${mov['stock_resultante']}',
                                   style: AppTextStyles.cuerpo(size: 12, peso: FontWeight.w600, color: AppColors.gris),
                                 ),
+                                if (_perfil?['es_super_admin'] == true)
+                                  IconButton(
+                                    icon: Icon(Icons.delete_outline, color: AppColors.rojoAlerta, size: 20),
+                                    onPressed: () => _eliminarMovimiento(mov['id']),
+                                    tooltip: 'Eliminar movimiento',
+                                  ),
                               ],
                             ),
                           );

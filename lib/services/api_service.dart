@@ -493,6 +493,17 @@ class ApiService {
       throw Exception('No se pudo cargar el historial del usuario');
     }
   }
+
+  // Elimina un movimiento del historial (solo Super Admin)
+  static Future<void> eliminarMovimiento(String token, int movimientoId) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/movimientos/$movimientoId');
+    final respuesta = await http.delete(url, headers: {'Authorization': 'Bearer $token'});
+
+    if (respuesta.statusCode != 200) {
+      final error = jsonDecode(respuesta.body);
+      throw Exception(error['detail'] ?? 'Error al eliminar el movimiento');
+    }
+  }
 // Sube la foto de un producto (sin comprimir, calidad completa)
   static Future<Map<String, dynamic>> subirFotoProducto(
     String token,
