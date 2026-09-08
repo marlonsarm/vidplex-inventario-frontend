@@ -312,7 +312,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       border: Border.all(color: AppColors.grisLinea),
                       image: fotoUrl != null
                           ? DecorationImage(
-                              image: NetworkImage('${AppConfig.baseUrl}$fotoUrl'),
+                              image: NetworkImage(_urlFoto(fotoUrl)),
                               fit: BoxFit.cover,
                             )
                           : null,
@@ -806,7 +806,7 @@ Widget _bannerBienvenida() {
                                     color: Colors.white.withValues(alpha: 0.08),
                                     image: tieneFoto
                                         ? DecorationImage(
-                                            image: NetworkImage('${AppConfig.baseUrl}$_fotoUrl'),
+                                            image: NetworkImage(_urlFoto(_fotoUrl!)),
                                             fit: BoxFit.cover,
                                             alignment: Alignment.center,
                                           )

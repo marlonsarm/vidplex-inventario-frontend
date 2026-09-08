@@ -1,14 +1,12 @@
 import 'dart:io';
-import 'package:http/http.dart' as http;
 import 'package:archive/archive_io.dart';
-
 Future<void> main(List<String> args) async {
   if (args.length < 2) {
-    stderr.writeln('Uso: updater.exe <url_zip> <ruta_exe_app>');
+    stderr.writeln('Uso: updater.exe <ruta_zip_local> <ruta_exe_app>');
     exit(1);
   }
 
-  final urlZip = args[0];
+  final rutaZipLocal = args[0];
   final rutaExeApp = args[1];
   final carpetaApp = File(rutaExeApp).parent.path;
   final nombreExe = File(rutaExeApp).uri.pathSegments.last;
@@ -19,18 +17,9 @@ Future<void> main(List<String> args) async {
   // del todo y libere el archivo .exe antes de intentar reemplazarlo.
   await Future.delayed(const Duration(seconds: 2));
 
-  final rutaZipTemp = '${Directory.systemTemp.path}\\invplex_update.zip';
-
   try {
-    print('Descargando actualización...');
-    final respuesta = await http.get(Uri.parse(urlZip));
-    if (respuesta.statusCode != 200) {
-      throw Exception('El servidor respondió ${respuesta.statusCode} al descargar el zip.');
-    }
-    await File(rutaZipTemp).writeAsBytes(respuesta.bodyBytes);
-
     print('Instalando actualización...');
-    final bytes = await File(rutaZipTemp).readAsBytes();
+    final bytes = await File(rutaZipLocal).readAsBytes();
     final archivo = ZipDecoder().decodeBytes(bytes);
 
     for (final entrada in archivo) {
@@ -60,7 +49,7 @@ Future<void> main(List<String> args) async {
     }
   } finally {
     try {
-      await File(rutaZipTemp).delete();
+      await File(rutaZipLocal).delete();
     } catch (_) {}
   }
 

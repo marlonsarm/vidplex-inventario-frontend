@@ -181,7 +181,7 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                         ? DecorationImage(image: MemoryImage(_imagenBytes!), fit: BoxFit.cover)
                         : (fotoUrl != null && fotoUrl.toString().isNotEmpty)
                             ? DecorationImage(
-                                image: CachedNetworkImageProvider('${AppConfig.baseUrl}$fotoUrl'),
+                                image: CachedNetworkImageProvider(fotoUrl.toString()),
                                 fit: BoxFit.cover,
                               )
                             : null,
