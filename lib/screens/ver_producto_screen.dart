@@ -98,6 +98,19 @@ class _VerProductoScreenState extends State<VerProductoScreen> {
       ),
     );
   }
+
+  String _formatearPrecio(dynamic valor) {
+    final numero = double.tryParse(valor.toString()) ?? 0;
+    final entero = numero.round();
+    final texto = entero.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < texto.length; i++) {
+      if (i > 0 && (texto.length - i) % 3 == 0) buffer.write('.');
+      buffer.write(texto[i]);
+    }
+    return '\$$buffer';
+  }
+
   Future<void> _moverDeAlmacenRapido() async {
     if (_secciones.isEmpty) return;
 
@@ -418,7 +431,7 @@ class _VerProductoScreenState extends State<VerProductoScreen> {
               clipBehavior: Clip.antiAlias,
               child: fotoUrl != null && fotoUrl.isNotEmpty
                   ? Image.network(
-                      '${AppConfig.baseUrl}$fotoUrl',
+                      fotoUrl.startsWith('http') ? fotoUrl : '${AppConfig.baseUrl}$fotoUrl',
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) =>
                           Icon(Icons.inventory_2_outlined, size: 56, color: Colors.grey[350]),
@@ -574,6 +587,14 @@ class _VerProductoScreenState extends State<VerProductoScreen> {
                 ],
                 const Divider(height: 1, color: AppColors.grisLinea, thickness: 1),
                 _filaDato(Icons.warning_amber_outlined, 'Stock mínimo', '${_producto['stock_minimo']}'),
+                if (_producto['precio_unitario'] != null) ...[
+                  const Divider(height: 1, color: AppColors.grisLinea, thickness: 1),
+                  _filaDato(Icons.attach_money, 'Precio unitario', _formatearPrecio(_producto['precio_unitario'])),
+                ],
+                if ((_producto['proveedor_nombre'] ?? '').toString().isNotEmpty) ...[
+                  const Divider(height: 1, color: AppColors.grisLinea, thickness: 1),
+                  _filaDato(Icons.local_shipping_outlined, 'Proveedor', _producto['proveedor_nombre']),
+                ],
               ],
             ),
           ),
