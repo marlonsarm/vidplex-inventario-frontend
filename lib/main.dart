@@ -63,44 +63,12 @@ class _DecisorDeInicioState extends State<DecisorDeInicio> {
   }
 
   Future<void> _revisarSesion() async {
+    // Por seguridad, cada vez que se abre la app (o se vuelve a abrir tras
+    // cerrarla, o tras apagar/prender el PC) se exige iniciar sesión de
+    // nuevo. No se reutiliza ninguna sesión guardada de una vez anterior.
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-
-    if (token == null) {
-      _irALogin();
-      return;
-    }
-
-    try {
-      final perfil = await ApiService.obtenerPerfil(token);
-
-      // Refresca los permisos guardados por si cambiaron desde el último login
-      await prefs.setBool('es_super_admin', perfil['es_super_admin']);
-      await prefs.setBool('puede_ver_stock', perfil['puede_ver_stock']);
-      await prefs.setBool('puede_registrar_entrada', perfil['puede_registrar_entrada']);
-      await prefs.setBool('puede_registrar_salida', perfil['puede_registrar_salida']);
-     await prefs.setBool('puede_crear_productos', perfil['puede_crear_productos']);
-      await prefs.setBool('puede_transferir', perfil['puede_transferir'] ?? false);
-
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => DashboardScreen(
-            token: token,
-            nombre: perfil['nombre_completo'],
-            esSuperAdmin: perfil['es_super_admin'],
-            puedeCrearProductos: perfil['puede_crear_productos'],
-            puedeRegistrarEntrada: perfil['puede_registrar_entrada'],
-            puedeRegistrarSalida: perfil['puede_registrar_salida'],
-            puedeTransferir: perfil['puede_transferir'] ?? false,
-          ),
-        ),
-      );
-    } catch (e) {
-      // El token ya no es válido (expiró o el usuario fue desactivado)
-      await prefs.remove('token');
-      _irALogin();
-    }
+    await prefs.remove('token');
+    _irALogin();
   }
 
   void _irALogin() {

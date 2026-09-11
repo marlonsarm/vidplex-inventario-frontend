@@ -7,5 +7,5 @@ static const String baseUrl = "http://192.168.121.104:8000";
 
   // Versión de ESTE build. Súbela cada vez que hagas un cambio que quieras
   // forzar a todos a tomar (junto con VERSION_MINIMA_FRONTEND en el backend).
-static const String appVersion = "1.0.6";
+static const String appVersion = "1.0.7";
 }
