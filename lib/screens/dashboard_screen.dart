@@ -696,7 +696,7 @@ Widget _bannerBienvenida() {
                                     );
                                   },
                                 ),
-                          if (widget.esSuperAdmin)
+                          if (widget.esSuperAdmin || widget.puedeVerFacturas)
                                 Container(
                                   width: 46,
                                   height: 46,

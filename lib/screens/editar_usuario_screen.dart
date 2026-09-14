@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
+import '../config.dart';
 import '../theme.dart';
 
 class EditarUsuarioScreen extends StatefulWidget {
@@ -543,9 +544,13 @@ class _EditarUsuarioScreenState extends State<EditarUsuarioScreen> {
                         boxShadow: [BoxShadow(color: _azul.withValues(alpha: 0.25), blurRadius: 18, spreadRadius: -4, offset: const Offset(0, 8))],
                         image: _imagenBytes != null
                             ? DecorationImage(image: MemoryImage(_imagenBytes!), fit: BoxFit.cover)
-                            : (widget.usuario['foto_url'] != null
+                            : (widget.usuario['foto_url'] != null && widget.usuario['foto_url'].toString().isNotEmpty
                                 ? DecorationImage(
-                                    image: NetworkImage('http://localhost:8000${widget.usuario['foto_url']}'),
+                                    image: NetworkImage(
+                                      widget.usuario['foto_url'].toString().startsWith('http')
+                                          ? widget.usuario['foto_url']
+                                          : '${AppConfig.baseUrl}${widget.usuario['foto_url']}',
+                                    ),
                                     fit: BoxFit.cover,
                                   )
                                 : null),
