@@ -339,13 +339,16 @@ Future<void> _verificarPendiente(Map pendiente) async {
                                         },
                                         leading: CircleAvatar(
                                           backgroundColor: activo ? Colors.green[100] : Colors.grey[300],
-                                          backgroundImage: fotoUrl != null ? NetworkImage('${AppConfig.baseUrl}$fotoUrl') : null,
-                                          child: fotoUrl != null
-                                              ? null
-                                              : Icon(
+                                          backgroundImage: (fotoUrl != null && fotoUrl.isNotEmpty)
+                                              ? NetworkImage(fotoUrl.startsWith('http') ? fotoUrl : '${AppConfig.baseUrl}$fotoUrl')
+                                              : null,
+                                          onBackgroundImageError: (fotoUrl != null && fotoUrl.isNotEmpty) ? (exception, stackTrace) {} : null,
+                                          child: (fotoUrl == null || fotoUrl.isEmpty)
+                                              ? Icon(
                                                   usuario['es_super_admin'] == true ? Icons.shield : Icons.person,
                                                   color: activo ? Colors.green[700] : Colors.grey,
-                                                ),
+                                                )
+                                              : null,
                                         ),
                                         title: Text(
                                           usuario['nombre_completo'],

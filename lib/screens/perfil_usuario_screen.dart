@@ -99,7 +99,6 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
   }
 
   Future<void> _cambiarFoto() async {
-    if (_perfil?['es_super_admin'] != true) return;
     final picker = ImagePicker();
     final XFile? archivo = await picker.pickImage(
       source: ImageSource.gallery,
@@ -195,8 +194,7 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                             )
                           : null,
                 ),
-                if (esSuperAdmin)
-                  Positioned(
+                Positioned(
                     right: 0,
                     bottom: 0,
                     child: Container(
