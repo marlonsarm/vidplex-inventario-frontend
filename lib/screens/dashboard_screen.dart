@@ -713,13 +713,14 @@ Widget _bannerBienvenida() {
                                     color: AppColors.negro2,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                     onSelected: (seccionId) {
-                                      final nombre = seccionId == null
+                                      final esTodo = seccionId == null || seccionId == 0;
+                                      final nombre = esTodo
                                           ? 'inventario_completo.xlsx'
                                           : 'inventario_${_secciones.firstWhere((s) => s['id'] == seccionId)['nombre'].toString().replaceAll(' ', '_')}.xlsx';
-                                      _exportarExcel(seccionId: seccionId, nombreArchivo: nombre);
+                                      _exportarExcel(seccionId: esTodo ? null : seccionId, nombreArchivo: nombre);
                                     },
                                     itemBuilder: (context) => [
-                                      PopupMenuItem(value: null, child: Text('Todo el inventario', style: AppTextStyles.cuerpo())),
+                                      PopupMenuItem(value: 0, child: Text('Todo el inventario', style: AppTextStyles.cuerpo())),
                                       const PopupMenuDivider(),
                                       ..._secciones.map((s) => PopupMenuItem(value: s['id'] as int, child: Text(s['nombre'], style: AppTextStyles.cuerpo()))),
                                     ],
