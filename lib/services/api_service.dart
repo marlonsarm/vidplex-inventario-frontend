@@ -230,6 +230,8 @@ class ApiService {
     required int stockActual,
     required int stockMinimo,
     required String unidadMedida,
+    int? proveedorId,
+    double? precioUnitario,
   }) async {
     final url = Uri.parse('${AppConfig.baseUrl}/productos/');
 
@@ -247,6 +249,8 @@ class ApiService {
         'stock_actual': stockActual,
         'stock_minimo': stockMinimo,
         'unidad_medida': unidadMedida,
+        'proveedor_id': proveedorId,
+        'precio_unitario': precioUnitario,
       }),
     );
 
@@ -582,6 +586,8 @@ class ApiService {
     int? seccionId,
     int? stockMinimo,
     String? unidadMedida,
+    int? proveedorId,
+    double? precioUnitario,
   }) async {
     final url = Uri.parse('${AppConfig.baseUrl}/productos/$productoId');
 
@@ -594,6 +600,8 @@ class ApiService {
     if (seccionId != null) body['seccion_id'] = seccionId;
     if (stockMinimo != null) body['stock_minimo'] = stockMinimo;
     if (unidadMedida != null) body['unidad_medida'] = unidadMedida;
+    if (proveedorId != null) body['proveedor_id'] = proveedorId;
+    if (precioUnitario != null) body['precio_unitario'] = precioUnitario;
 
     final respuesta = await http.patch(
       url,

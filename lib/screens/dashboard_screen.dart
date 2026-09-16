@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../services/excel_download_web.dart' if (dart.library.io) '../services/excel_download_stub.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/beep.dart';
 import '../services/api_service.dart';
@@ -72,6 +73,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _scrollController = ScrollController();
   bool _vistaLista = false;
   bool _busquedaAbierta = false;
+  int _indiceSeleccionado = -1;
+  final FocusNode _teclasFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -87,6 +90,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 300) {
       _cargarMasProductos();
     }
+  }
+
+  void _manejarTeclado(KeyEvent event) {
+    if (event is! KeyDownEvent) return;
+    if (_productos.isEmpty) return;
+
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      setState(() {
+        _indiceSeleccionado = (_indiceSeleccionado + 1).clamp(0, _productos.length - 1);
+      });
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      setState(() {
+        _indiceSeleccionado = (_indiceSeleccionado - 1).clamp(0, _productos.length - 1);
+      });
+    } else if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      if (_indiceSeleccionado >= 0 && _indiceSeleccionado < _productos.length) {
+        _abrirProducto(_productos[_indiceSeleccionado]);
+      }
+    } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+      setState(() => _indiceSeleccionado = -1);
+    }
+  }
+
+  Future<void> _abrirProducto(dynamic producto) async {
+    final actualizado = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VerProductoScreen(
+          token: widget.token,
+          producto: producto,
+          puedeEditar: widget.esSuperAdmin || widget.puedeCrearProductos,
+          puedeRegistrarEntrada: widget.esSuperAdmin || widget.puedeRegistrarEntrada,
+          puedeRegistrarSalida: widget.esSuperAdmin || widget.puedeRegistrarSalida,
+        ),
+      ),
+    );
+    if (actualizado == true) _cargarProductos();
   }
 
   void _buscarConRetraso(String valor) {
@@ -260,6 +299,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     _busquedaController.dispose();
     _scrollController.dispose();
+    _teclasFocusNode.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -1030,20 +1070,11 @@ Widget _bannerBienvenida() {
                 }
                 final producto = _productos[index];
                 final bool stockBajo = producto['stock_actual'] <= producto['stock_minimo'];
+                final bool seleccionado = index == _indiceSeleccionado;
                 return InkWell(
-                  onTap: () async {
-                    final actualizado = await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => VerProductoScreen(
-                          token: widget.token,
-                          producto: producto,
-                          puedeEditar: widget.esSuperAdmin || widget.puedeCrearProductos,
-                          puedeRegistrarEntrada: widget.esSuperAdmin || widget.puedeRegistrarEntrada,
-                          puedeRegistrarSalida: widget.esSuperAdmin || widget.puedeRegistrarSalida,
-                        ),
-                      ),
-                    );
-                    if (actualizado == true) _cargarProductos();
+                  onTap: () {
+                    setState(() => _indiceSeleccionado = index);
+                    _abrirProducto(producto);
                   },
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 6),
@@ -1052,7 +1083,10 @@ Widget _bannerBienvenida() {
                       color: AppColors.negro2,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: stockBajo ? AppColors.ambarBajo.withValues(alpha: 0.5) : AppColors.grisLinea,
+                        color: seleccionado
+                            ? AppColors.acento
+                            : (stockBajo ? AppColors.ambarBajo.withValues(alpha: 0.5) : AppColors.grisLinea),
+                        width: 1,
                       ),
                     ),
                     child: Row(
@@ -1343,184 +1377,187 @@ Widget _bannerBienvenida() {
           label: const Text('Escanear'),
         ),
       ),
-   body: RefreshIndicator(
-        color: AppColors.acento,
-        backgroundColor: AppColors.negro2,
-        onRefresh: _cargarProductos,
-        child: Scrollbar(
-          controller: _scrollController,
-          child: CustomScrollView(
-            controller: _scrollController,
-            cacheExtent: 300,
-            slivers: [
-              SliverToBoxAdapter(child: RepaintBoundary(child: _bannerBienvenida())),
- 
-              if (_categoriaSeleccionada != null)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
-                    child: InkWell(
-                      onTap: _volverACarpetas,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.arrow_back_ios_new, size: 14, color: AppColors.acento),
-                          const SizedBox(width: 6),
-                          Text(
-                            _categoriaSeleccionada == '__sin_categoria__' ? 'Sin categoría' : _categoriaSeleccionada!,
-                            style: AppTextStyles.cuerpo(size: 13, peso: FontWeight.w700, color: AppColors.acento),
-                          ),
-                        ],
-                      ),
+   body: KeyboardListener(
+        focusNode: _teclasFocusNode,
+        autofocus: true,
+        onKeyEvent: _manejarTeclado,
+        child: Column(
+        children: [
+          RepaintBoundary(child: _bannerBienvenida()),
+          if (_categoriaSeleccionada != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+              child: InkWell(
+                onTap: _volverACarpetas,
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.arrow_back_ios_new, size: 14, color: AppColors.acento),
+                    const SizedBox(width: 6),
+                    Text(
+                      _categoriaSeleccionada == '__sin_categoria__' ? 'Sin categoría' : _categoriaSeleccionada!,
+                      style: AppTextStyles.cuerpo(size: 13, peso: FontWeight.w700, color: AppColors.acento),
                     ),
-                  ),
-                ),
-              SliverToBoxAdapter(
-                child: Transform.translate(
-                  offset: const Offset(0, 0),
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(AppSpacing.md, 14, AppSpacing.md, 32),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 22, spreadRadius: -4, offset: const Offset(0, 10)),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        width: _busquedaAbierta ? 260 : 185,
-                        height: 46,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF1E3A5F), Color(0xFF2C5282)],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(color: const Color(0xFF2C5282).withValues(alpha: 0.35), blurRadius: 10, spreadRadius: -2, offset: const Offset(0, 4)),
-                          ],
-                        ),
-                        child: _busquedaAbierta
-                            ? TextField(
-                                controller: _busquedaController,
-                                autofocus: true,
-                                style: AppTextStyles.cuerpo(size: 13.5, color: const Color(0xFF1E3A5F)),
-                                decoration: InputDecoration(
-                                  isDense: true,
-                                  hintText: 'Buscar...',
-                                  hintStyle: TextStyle(fontSize: 13, color: const Color(0xFF1E3A5F).withValues(alpha: 0.5)),
-                                  prefixIcon: const Icon(Icons.search, color: Color(0xFF1E3A5F), size: 20),
-                                  suffixIcon: IconButton(
-                                  icon: Icon(Icons.close, size: 18, color: const Color(0xFF1E3A5F).withValues(alpha: 0.8)),
-                                    onPressed: () {
-                                      _busquedaController.clear();
-                                      setState(() {
-                                        _textoBusqueda = '';
-                                        _busquedaAbierta = false;
-                                      });
-                                      _cargarProductos();
-                                    },
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                                ),
-                                onChanged: _buscarConRetraso,
-                              )
-                            : InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: () => setState(() => _busquedaAbierta = true),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.search, color: Colors.white, size: 17),
-                                      const SizedBox(width: 6),
-                                      Text('Buscar', style: AppTextStyles.subtitulo(size: 12.5, color: Colors.white.withValues(alpha: 0.85))),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (_secciones.isNotEmpty)
-                        Expanded(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                ChoiceChip(
-                                  label: const Text('Todas'),
-                                  selected: _seccionSeleccionada == null,
-                                  onSelected: (_) => _seleccionarSeccion(null),
-                                  backgroundColor: const Color(0xFFF1F3F7),
-                                  selectedColor: const Color(0xFF2C5282),
-                                  showCheckmark: false,
-                                  elevation: 0,
-                                  pressElevation: 2,
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                  side: BorderSide(
-                                    color: _seccionSeleccionada == null ? Colors.transparent : AppColors.grisLinea,
-                                    width: 1,
-                                  ),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.chip)),
-                                  labelStyle: AppTextStyles.cuerpo(
-                                    size: 13,
-                                    peso: FontWeight.w700,
-                                    color: _seccionSeleccionada == null ? Colors.white : AppColors.gris,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                ..._secciones.map((s) => Padding(
-                                      padding: const EdgeInsets.only(right: 10),
-                                      child: ChoiceChip(
-                                        label: Text(s['nombre']),
-                                        selected: _seccionSeleccionada == s['id'],
-                                        onSelected: (_) => _seleccionarSeccion(s['id']),
-                                        backgroundColor: const Color(0xFFF1F3F7),
-                                        selectedColor: const Color(0xFF2C5282),
-                                        showCheckmark: false,
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                        side: BorderSide(
-                                          color: _seccionSeleccionada == s['id'] ? Colors.transparent : AppColors.grisLinea,
-                                        ),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.chip)),
-                                        labelStyle: AppTextStyles.cuerpo(
-                                          size: 13.5,
-                                          peso: FontWeight.w700,
-                                          color: _seccionSeleccionada == s['id'] ? Colors.white : AppColors.gris,
-                                        ),
-                                      ),
-                                    )),
-                              ],
-                            ),
-                          ),
-                        ),
-                      const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(color: AppColors.negro2, shape: BoxShape.circle),
-                        child: IconButton(
-                          icon: Icon(_vistaLista ? Icons.grid_view_rounded : Icons.view_list_rounded, color: AppColors.acento, size: 20),
-                          tooltip: _vistaLista ? 'Ver en cuadrícula' : 'Ver en lista',
-                          onPressed: () => setState(() => _vistaLista = !_vistaLista),
-                          iconSize: 20,
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(),
-                        ),
-                      ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
               ),
-              ..._sliversDeContenido(),
-            ],
+            ),
+          Container(
+            margin: const EdgeInsets.fromLTRB(AppSpacing.md, 14, AppSpacing.md, 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 22, spreadRadius: -4, offset: const Offset(0, 10)),
+              ],
+            ),
+            child: Row(
+              children: [
+                AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                width: _busquedaAbierta ? 260 : 185,
+                height: 46,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E3A5F), Color(0xFF2C5282)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFF2C5282).withValues(alpha: 0.35), blurRadius: 10, spreadRadius: -2, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: _busquedaAbierta
+                    ? TextField(
+                        controller: _busquedaController,
+                        autofocus: true,
+                        style: AppTextStyles.cuerpo(size: 13.5, color: const Color(0xFF1E3A5F)),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          hintText: 'Buscar...',
+                          hintStyle: TextStyle(fontSize: 13, color: const Color(0xFF1E3A5F).withValues(alpha: 0.5)),
+                          prefixIcon: const Icon(Icons.search, color: Color(0xFF1E3A5F), size: 20),
+                          suffixIcon: IconButton(
+                          icon: Icon(Icons.close, size: 18, color: const Color(0xFF1E3A5F).withValues(alpha: 0.8)),
+                            onPressed: () {
+                              _busquedaController.clear();
+                              setState(() {
+                                _textoBusqueda = '';
+                                _busquedaAbierta = false;
+                              });
+                              _cargarProductos();
+                            },
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                        onChanged: _buscarConRetraso,
+                      )
+                    : InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => setState(() => _busquedaAbierta = true),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.search, color: Colors.white, size: 17),
+                              const SizedBox(width: 6),
+                              Text('Buscar', style: AppTextStyles.subtitulo(size: 12.5, color: Colors.white.withValues(alpha: 0.85))),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 8),
+              if (_secciones.isNotEmpty)
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Todas'),
+                          selected: _seccionSeleccionada == null,
+                          onSelected: (_) => _seleccionarSeccion(null),
+                          backgroundColor: const Color(0xFFF1F3F7),
+                          selectedColor: const Color(0xFF2C5282),
+                          showCheckmark: false,
+                          elevation: 0,
+                          pressElevation: 2,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          side: BorderSide(
+                            color: _seccionSeleccionada == null ? Colors.transparent : AppColors.grisLinea,
+                            width: 1,
+                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.chip)),
+                          labelStyle: AppTextStyles.cuerpo(
+                            size: 13,
+                            peso: FontWeight.w700,
+                            color: _seccionSeleccionada == null ? Colors.white : AppColors.gris,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        ..._secciones.map((s) => Padding(
+                              padding: const EdgeInsets.only(right: 10),
+                              child: ChoiceChip(
+                                label: Text(s['nombre']),
+                                selected: _seccionSeleccionada == s['id'],
+                                onSelected: (_) => _seleccionarSeccion(s['id']),
+                                backgroundColor: const Color(0xFFF1F3F7),
+                                selectedColor: const Color(0xFF2C5282),
+                                showCheckmark: false,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                side: BorderSide(
+                                  color: _seccionSeleccionada == s['id'] ? Colors.transparent : AppColors.grisLinea,
+                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.chip)),
+                                labelStyle: AppTextStyles.cuerpo(
+                                  size: 13.5,
+                                  peso: FontWeight.w700,
+                                  color: _seccionSeleccionada == s['id'] ? Colors.white : AppColors.gris,
+                                ),
+                              ),
+                            )),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 8),
+              Container(
+                decoration: BoxDecoration(color: AppColors.negro2, shape: BoxShape.circle),
+                child: IconButton(
+                  icon: Icon(_vistaLista ? Icons.grid_view_rounded : Icons.view_list_rounded, color: AppColors.acento, size: 20),
+                  tooltip: _vistaLista ? 'Ver en cuadrícula' : 'Ver en lista',
+                  onPressed: () => setState(() => _vistaLista = !_vistaLista),
+                  iconSize: 20,
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+              ],
+            ),
           ),
-        ),
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.acento,
+              backgroundColor: AppColors.negro2,
+              onRefresh: _cargarProductos,
+              child: Scrollbar(
+                controller: _scrollController,
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  cacheExtent: 300,
+                  slivers: [
+                    ..._sliversDeContenido(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       ),
     );
   }
