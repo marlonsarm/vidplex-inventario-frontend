@@ -946,9 +946,9 @@ class _FacturaDetalleScreenState extends State<_FacturaDetalleScreen> {
       await ApiService.confirmarFactura(token: widget.token, facturaId: widget.facturaId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Factura confirmada, stock actualizado')),
+        const SnackBar(content: Text('Factura confirmada y cerrada, stock actualizado')),
       );
-      _cargarFactura();
+      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -482,6 +482,20 @@ class ApiService {
     }
   }
 
+  // Trae todos los movimientos de un día (historial general). tipo: entrada | salida
+  static Future<List<dynamic>> getHistorialGeneral(String token, String fecha, String tipo) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/movimientos/historial-general')
+        .replace(queryParameters: {'fecha': fecha, 'tipo': tipo});
+
+    final respuesta = await http.get(url, headers: {'Authorization': 'Bearer $token'});
+
+    if (respuesta.statusCode == 200) {
+      return jsonDecode(respuesta.body);
+    } else {
+      throw Exception('No se pudo cargar el historial');
+    }
+  }
+
   // Trae el historial de movimientos hechos POR un usuario (su actividad)
   static Future<List<dynamic>> getHistorialUsuario(String token, int usuarioId) async {
     final url = Uri.parse('${AppConfig.baseUrl}/movimientos/historial-usuario/$usuarioId');

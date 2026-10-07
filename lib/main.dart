@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -19,6 +20,13 @@ class InvPlexApp extends StatelessWidget {
     return MaterialApp(
       title: 'InvPlex',
       debugShowCheckedModeBanner: false,
+      locale: const Locale('es', 'CO'),
+      supportedLocales: const [Locale('es', 'CO'), Locale('es')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: buildAppTheme(),
       home: const DecisorDeInicio(),
     );

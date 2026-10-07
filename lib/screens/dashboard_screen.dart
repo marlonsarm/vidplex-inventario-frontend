@@ -15,6 +15,7 @@ import 'crear_usuario_screen.dart';
 import 'lista_usuarios_screen.dart';
 import 'ver_producto_screen.dart';
 import 'facturas_screen.dart';
+import 'historial_general_screen.dart';
 import 'perfil_usuario_screen.dart';
 class DashboardScreen extends StatefulWidget {
   final String token;
@@ -75,6 +76,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _busquedaAbierta = false;
   int _indiceSeleccionado = -1;
   final FocusNode _teclasFocusNode = FocusNode();
+  final Map<int, GlobalKey> _clavesFilas = {};
+  static const double _alturaFilaEstimada = 62;
 
   @override
   void initState() {
@@ -92,23 +95,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  int _filasPorPagina() {
+    if (!_scrollController.hasClients) return 10;
+    final filas = (_scrollController.position.viewportDimension / _alturaFilaEstimada).floor();
+    return filas < 1 ? 1 : filas;
+  }
+
+  void _moverSeleccion(int nuevoIndice, {required bool bajando}) {
+    if (_productos.isEmpty) return;
+    final indice = nuevoIndice.clamp(0, _productos.length - 1);
+    setState(() => _indiceSeleccionado = indice);
+    _asegurarFilaVisible(indice, bajando);
+    if (indice >= _productos.length - 5) _cargarMasProductos();
+  }
+
+  void _asegurarFilaVisible(int indice, bool bajando, {bool reintento = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final ctx = _clavesFilas[indice]?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 90),
+          alignmentPolicy: bajando
+              ? ScrollPositionAlignmentPolicy.keepVisibleAtEnd
+              : ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+        );
+      } else if (reintento && _scrollController.hasClients) {
+        final destino = (indice * _alturaFilaEstimada)
+            .clamp(0.0, _scrollController.position.maxScrollExtent);
+        _scrollController.jumpTo(destino);
+        _asegurarFilaVisible(indice, bajando, reintento: false);
+      }
+    });
+  }
+
   void _manejarTeclado(KeyEvent event) {
-    if (event is! KeyDownEvent) return;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return;
     if (_productos.isEmpty) return;
 
-    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-      setState(() {
-        _indiceSeleccionado = (_indiceSeleccionado + 1).clamp(0, _productos.length - 1);
-      });
-    } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-      setState(() {
-        _indiceSeleccionado = (_indiceSeleccionado - 1).clamp(0, _productos.length - 1);
-      });
-    } else if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+    final tecla = event.logicalKey;
+
+    if (tecla == LogicalKeyboardKey.arrowDown) {
+      _moverSeleccion(_indiceSeleccionado + 1, bajando: true);
+    } else if (tecla == LogicalKeyboardKey.arrowUp) {
+      _moverSeleccion(_indiceSeleccionado - 1, bajando: false);
+    } else if (tecla == LogicalKeyboardKey.pageDown) {
+      _moverSeleccion(_indiceSeleccionado + _filasPorPagina(), bajando: true);
+    } else if (tecla == LogicalKeyboardKey.pageUp) {
+      _moverSeleccion(_indiceSeleccionado - _filasPorPagina(), bajando: false);
+    } else if (tecla == LogicalKeyboardKey.home && !_busquedaAbierta) {
+      _moverSeleccion(0, bajando: false);
+    } else if (tecla == LogicalKeyboardKey.end && !_busquedaAbierta) {
+      _moverSeleccion(_productos.length - 1, bajando: true);
+    } else if (event is KeyDownEvent &&
+        (tecla == LogicalKeyboardKey.enter || tecla == LogicalKeyboardKey.numpadEnter)) {
       if (_indiceSeleccionado >= 0 && _indiceSeleccionado < _productos.length) {
         _abrirProducto(_productos[_indiceSeleccionado]);
       }
-    } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+    } else if (event is KeyDownEvent && tecla == LogicalKeyboardKey.escape) {
       setState(() => _indiceSeleccionado = -1);
     }
   }
@@ -232,6 +277,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _cargando = false;
       });
+    }
+  }
+
+  Future<void> _refrescarSilencioso() async {
+    if (_cargando) return;
+    const int idCuartoMantenimiento = 1;
+    final paginasCargadas = _paginaActual;
+    try {
+      final List<dynamic> acumulados = [];
+      int total = _totalProductos;
+      for (int pagina = 1; pagina <= paginasCargadas; pagina++) {
+        final resultado = await ApiService.getProductos(
+          widget.token,
+          seccionId: _seccionSeleccionada,
+          categoria: _seccionSeleccionada == idCuartoMantenimiento ? null : _categoriaSeleccionada,
+          responsable: _seccionSeleccionada == idCuartoMantenimiento ? _categoriaSeleccionada : null,
+          buscar: _textoBusqueda.isEmpty ? null : _textoBusqueda,
+          pagina: pagina,
+        );
+        acumulados.addAll(resultado['productos']);
+        total = resultado['total'];
+      }
+      final alertas = await ApiService.getAlertasStockBajo(widget.token);
+      if (!mounted) return;
+      setState(() {
+        _productos = acumulados;
+        _totalProductos = total;
+        _alertasStockBajo = alertas.length;
+        if (_indiceSeleccionado >= _productos.length) {
+          _indiceSeleccionado = _productos.length - 1;
+        }
+      });
+    } catch (e) {
+      // silencioso: si falla, se queda con la lista que ya tenía
     }
   }
 
@@ -508,7 +587,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Listo, nuevo stock: ${resultado['stock_resultante']}')),
       );
-      _cargarProductos();
+      _refrescarSilencioso();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -698,6 +777,17 @@ Widget _bannerBienvenida() {
                                   },
                                 ),
 
+                              if (widget.esSuperAdmin || widget.puedeVerFacturas)
+                                _accionCirculo(
+                                  icono: Icons.history,
+                                  tooltip: 'Historial de ingresos y retiros',
+                                  color: plataMedio,
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (_) => HistorialGeneralScreen(token: widget.token)),
+                                    );
+                                  },
+                                ),
                               if (widget.esSuperAdmin || widget.puedeVerFacturas)
                                 _accionCirculo(
                                   icono: Icons.receipt_long_outlined,
@@ -1072,6 +1162,7 @@ Widget _bannerBienvenida() {
                 final bool stockBajo = producto['stock_actual'] <= producto['stock_minimo'];
                 final bool seleccionado = index == _indiceSeleccionado;
                 return InkWell(
+                  key: _clavesFilas.putIfAbsent(index, () => GlobalKey()),
                   onTap: () {
                     setState(() => _indiceSeleccionado = index);
                     _abrirProducto(producto);
@@ -1199,7 +1290,7 @@ Widget _bannerBienvenida() {
                         ),
                       ),
                     );
-                    if (actualizado == true) _cargarProductos();
+                    if (actualizado == true) _refrescarSilencioso();
                   },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
