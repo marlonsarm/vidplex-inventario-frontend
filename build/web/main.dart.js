@@ -31036,7 +31036,7 @@ aXh:function aXh(a){this.a=a},
 a16(){var s=0,r=A.q(t.nA),q,p=2,o=[],n,m,l,k,j,i,h,g,f
 var $async$a16=A.m(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
-n=A.bO("http://192.168.121.84:8000/version/",0,null)
+n=A.bO("http://192.168.121.104:8000/version/",0,null)
 s=7
 return A.i(A.ec(n,null).Bz(0,B.Ud),$async$a16)
 case 7:m=b
@@ -31113,7 +31113,7 @@ if(r!==q)return r<q}return!1},
 aCw(){var s=0,r=A.q(t.M9),q,p=2,o=[],n,m,l,k,j,i,h
 var $async$aCw=A.m(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
-n=A.bO("http://192.168.121.84:8000/version/",0,null)
+n=A.bO("http://192.168.121.104:8000/version/",0,null)
 s=7
 return A.i(A.ec(n,null).Bz(0,B.Uc),$async$aCw)
 case 7:m=b
@@ -35315,7 +35315,7 @@ if(r==="webp")return A.y8(s,"webp",null)
 return A.y8(s,"jpeg",null)},
 ag7(a,b){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$ag7=A.m(function(c,d){if(c===1)return A.n(d,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/auth/login",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/auth/login",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json"],n,n)
 s=3
@@ -35338,7 +35338,7 @@ if(c!=null)n.n(0,"categoria",c)
 if(f!=null)n.n(0,"responsable",f)
 if(b!=null&&b.length!==0)n.n(0,"buscar",b)
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/productos/",0,null).tA(0,n),A.a7(["Authorization","Bearer "+a],o,o)),$async$rz)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/productos/",0,null).tA(0,n),A.a7(["Authorization","Bearer "+a],o,o)),$async$rz)
 case 3:p=i
 if(p.b===200){q=B.D.bG(0,A.bC(A.bB(p.e)).bl(0,p.w),null)
 s=1
@@ -35349,7 +35349,7 @@ afL(a,b){var s=0,r=A.q(t.P),q,p,o,n,m
 var $async$afL=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:n=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/productos/buscar/"+b,0,null),A.a7(["Authorization","Bearer "+a],n,n)),$async$afL)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/productos/buscar/"+b,0,null),A.a7(["Authorization","Bearer "+a],n,n)),$async$afL)
 case 3:m=d
 n=m.b
 p=m.e
@@ -35363,7 +35363,7 @@ afM(a,b){var s=0,r=A.q(t.nA),q,p,o
 var $async$afM=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/productos/buscar-por-nombre",0,null).tA(0,A.a7(["nombre",b],p,t.z)),A.a7(["Authorization","Bearer "+a],p,p)),$async$afM)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/productos/buscar-por-nombre",0,null).tA(0,A.a7(["nombre",b],p,t.z)),A.a7(["Authorization","Bearer "+a],p,p)),$async$afM)
 case 3:o=d
 p=o.b
 if(p===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
@@ -35377,7 +35377,7 @@ afN(a,b){var s=0,r=A.q(t.j),q,p,o,n,m
 var $async$afN=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:n=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/productos/buscar-por-nombre-parcial",0,null).tA(0,A.a7(["nombre",b],n,t.z)),A.a7(["Authorization","Bearer "+a],n,n)),$async$afN)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/productos/buscar-por-nombre-parcial",0,null).tA(0,A.a7(["nombre",b],n,t.z)),A.a7(["Authorization","Bearer "+a],n,n)),$async$afN)
 case 3:m=d
 n=m.b
 p=m.e
@@ -35389,7 +35389,7 @@ throw A.e(A.bk(n==null?"Error al buscar productos":n))}case 1:return A.o(q,r)}})
 return A.p($async$afN,r)},
 afJ(a,b,c,d){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$afJ=A.m(function(e,f){if(e===1)return A.n(f,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/productos/"+b+"/asignar-codigo",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/productos/"+b+"/asignar-codigo",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json","Authorization","Bearer "+d],n,n)
 s=3
@@ -35405,7 +35405,7 @@ throw A.e(A.bk(n==null?"Error al asignar el c\xf3digo al producto":n))}case 1:re
 return A.p($async$afJ,r)},
 wz(a,b,c,d,e,f){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$wz=A.m(function(g,h){if(g===1)return A.n(h,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/movimientos/registrar",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/movimientos/registrar",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json","Authorization","Bearer "+f],n,n)
 s=3
@@ -35421,7 +35421,7 @@ throw A.e(A.bk(n==null?"Error al registrar el movimiento":n))}case 1:return A.o(
 return A.p($async$wz,r)},
 ag8(a,b,c,d,e,f,g){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$ag8=A.m(function(h,i){if(h===1)return A.n(i,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/productos/resolver-codigo",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/productos/resolver-codigo",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json","Authorization","Bearer "+g],n,n)
 s=3
@@ -35437,7 +35437,7 @@ throw A.e(A.bk(n==null?"Error al resolver el c\xf3digo escaneado":n))}case 1:ret
 return A.p($async$ag8,r)},
 PQ(a,b,c,d,e,f,g,h,i,j){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$PQ=A.m(function(k,a0){if(k===1)return A.n(a0,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/productos/",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/productos/",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json","Authorization","Bearer "+i],n,n)
 s=3
@@ -35455,7 +35455,7 @@ PR(a){var s=0,r=A.q(t.j),q,p,o
 var $async$PR=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/productos/alertas/stock-bajo",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$PR)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/productos/alertas/stock-bajo",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$PR)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35466,7 +35466,7 @@ Ck(a){var s=0,r=A.q(t.j),q,p,o
 var $async$Ck=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/secciones/todas",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$Ck)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/secciones/todas",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$Ck)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35477,7 +35477,7 @@ p9(a){var s=0,r=A.q(t.j),q,p,o
 var $async$p9=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/secciones/",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$p9)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/secciones/",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$p9)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35486,7 +35486,7 @@ case 1:return A.o(q,r)}})
 return A.p($async$p9,r)},
 afR(a,b,c,d,e,f,g,h,i,j,k,a0,a1){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$afR=A.m(function(a2,a3){if(a2===1)return A.n(a3,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/usuarios/",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/usuarios/",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json","Authorization","Bearer "+a1],n,n)
 s=3
@@ -35502,7 +35502,7 @@ throw A.e(A.bk(n==null?"Error al crear el usuario":n))}case 1:return A.o(q,r)}})
 return A.p($async$afR,r)},
 agb(a,b,c){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$agb=A.m(function(d,e){if(d===1)return A.n(e,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/usuarios/pendientes/"+b+"/verificar",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/usuarios/pendientes/"+b+"/verificar",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json","Authorization","Bearer "+c],n,n)
 s=3
@@ -35520,7 +35520,7 @@ ag6(a){var s=0,r=A.q(t.j),q,p,o
 var $async$ag6=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/usuarios/pendientes",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag6)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/usuarios/pendientes",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag6)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35531,7 +35531,7 @@ ag5(a){var s=0,r=A.q(t.j),q,p,o
 var $async$ag5=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/usuarios/",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag5)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/usuarios/",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag5)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35542,14 +35542,14 @@ afO(a,b,c){var s=0,r=A.q(t.H),q,p
 var $async$afO=A.m(function(d,e){if(d===1)return A.n(e,r)
 for(;;)switch(s){case 0:q=t.N
 s=2
-return A.i(A.b3e(A.bO("http://192.168.121.84:8000/usuarios/"+b+"/estado?activo="+c,0,null),null,A.a7(["Authorization","Bearer "+a],q,q)),$async$afO)
+return A.i(A.b3e(A.bO("http://192.168.121.104:8000/usuarios/"+b+"/estado?activo="+c,0,null),null,A.a7(["Authorization","Bearer "+a],q,q)),$async$afO)
 case 2:p=e
 if(p.b!==200){q=J.v(B.D.bG(0,A.bC(A.bB(p.e)).bl(0,p.w),null),"detail")
 throw A.e(A.bk(q==null?"Error al cambiar el estado del usuario":q))}return A.o(null,r)}})
 return A.p($async$afO,r)},
 afS(a,b,c,d,e,f,g,h,i,j,a0,a1){var s=0,r=A.q(t.P),q,p,o,n,m,l,k
 var $async$afS=A.m(function(a2,a3){if(a2===1)return A.n(a3,r)
-for(;;)switch(s){case 0:m=A.bO("http://192.168.121.84:8000/usuarios/"+a1,0,null)
+for(;;)switch(s){case 0:m=A.bO("http://192.168.121.104:8000/usuarios/"+a1,0,null)
 l=t.N
 k=A.G(l,t.z)
 k.n(0,"nombre_completo",c)
@@ -35578,7 +35578,7 @@ ag1(a,b){var s=0,r=A.q(t.j),q,p,o
 var $async$ag1=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/movimientos/historial/"+b,0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag1)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/movimientos/historial/"+b,0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag1)
 case 3:o=d
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35589,7 +35589,7 @@ ag2(a,b,c){var s=0,r=A.q(t.j),q,p,o
 var $async$ag2=A.m(function(d,e){if(d===1)return A.n(e,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/movimientos/historial-general",0,null).tA(0,A.a7(["fecha",b,"tipo",c],p,t.z)),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag2)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/movimientos/historial-general",0,null).tA(0,A.a7(["fecha",b,"tipo",c],p,t.z)),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag2)
 case 3:o=e
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35600,7 +35600,7 @@ ag3(a,b){var s=0,r=A.q(t.j),q,p,o
 var $async$ag3=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/movimientos/historial-usuario/"+b,0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag3)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/movimientos/historial-usuario/"+b,0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag3)
 case 3:o=d
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35611,14 +35611,14 @@ afV(a,b){var s=0,r=A.q(t.H),q,p
 var $async$afV=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:q=t.N
 s=2
-return A.i(A.Pb(A.bO("http://192.168.121.84:8000/movimientos/"+b,0,null),null,A.a7(["Authorization","Bearer "+a],q,q)),$async$afV)
+return A.i(A.Pb(A.bO("http://192.168.121.104:8000/movimientos/"+b,0,null),null,A.a7(["Authorization","Bearer "+a],q,q)),$async$afV)
 case 2:p=d
 if(p.b!==200){q=J.v(B.D.bG(0,A.bC(A.bB(p.e)).bl(0,p.w),null),"detail")
 throw A.e(A.bk(q==null?"Error al eliminar el movimiento":q))}return A.o(null,r)}})
 return A.p($async$afV,r)},
 wA(a,b,c,d){var s=0,r=A.q(t.P),q,p,o,n,m,l,k
 var $async$wA=A.m(function(e,f){if(e===1)return A.n(f,r)
-for(;;)switch(s){case 0:l=A.b7k("POST",A.bO("http://192.168.121.84:8000/productos/"+b+"/foto",0,null))
+for(;;)switch(s){case 0:l=A.b7k("POST",A.bO("http://192.168.121.104:8000/productos/"+b+"/foto",0,null))
 l.r.n(0,"Authorization","Bearer "+a)
 l.y.push(A.b7j("archivo",c,A.bbh(d),d))
 k=A
@@ -35637,7 +35637,7 @@ throw A.e(A.bk(o==null?"Error al subir la foto":o))}case 1:return A.o(q,r)}})
 return A.p($async$wA,r)},
 rA(a,b,c,d){var s=0,r=A.q(t.P),q,p,o,n,m,l,k
 var $async$rA=A.m(function(e,f){if(e===1)return A.n(f,r)
-for(;;)switch(s){case 0:l=A.b7k("POST",A.bO("http://192.168.121.84:8000/usuarios/"+b+"/foto",0,null))
+for(;;)switch(s){case 0:l=A.b7k("POST",A.bO("http://192.168.121.104:8000/usuarios/"+b+"/foto",0,null))
 l.r.n(0,"Authorization","Bearer "+a)
 l.y.push(A.b7j("archivo",c,A.bbh(d),d))
 k=A
@@ -35658,7 +35658,7 @@ PU(a){var s=0,r=A.q(t.P),q,p,o
 var $async$PU=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/usuarios/yo",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$PU)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/usuarios/yo",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$PU)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35667,7 +35667,7 @@ case 1:return A.o(q,r)}})
 return A.p($async$PU,r)},
 p8(a,b,c,d,e,f,g,h,i,j,a0,a1){var s=0,r=A.q(t.P),q,p,o,n,m,l,k
 var $async$p8=A.m(function(a2,a3){if(a2===1)return A.n(a3,r)
-for(;;)switch(s){case 0:m=A.bO("http://192.168.121.84:8000/productos/"+e,0,null)
+for(;;)switch(s){case 0:m=A.bO("http://192.168.121.104:8000/productos/"+e,0,null)
 l=t.N
 k=A.G(l,t.z)
 if(b!=null)k.n(0,"codigo_barras",b)
@@ -35696,7 +35696,7 @@ afW(a,b){var s=0,r=A.q(t.H),q,p
 var $async$afW=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:q=t.N
 s=2
-return A.i(A.Pb(A.bO("http://192.168.121.84:8000/productos/"+b,0,null),null,A.a7(["Authorization","Bearer "+a],q,q)),$async$afW)
+return A.i(A.Pb(A.bO("http://192.168.121.104:8000/productos/"+b,0,null),null,A.a7(["Authorization","Bearer "+a],q,q)),$async$afW)
 case 2:p=d
 if(p.b!==200){q=J.v(B.D.bG(0,A.bC(A.bB(p.e)).bl(0,p.w),null),"detail")
 throw A.e(A.bk(q==null?"Error al eliminar el producto":q))}return A.o(null,r)}})
@@ -35706,7 +35706,7 @@ var $async$afY=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:n=t.N
 m=A.G(n,n)
 if(b!=null)m.n(0,"seccion_id",A.l(b))
-p=A.bO("http://192.168.121.84:8000/productos/exportar-excel",0,null)
+p=A.bO("http://192.168.121.104:8000/productos/exportar-excel",0,null)
 s=3
 return A.i(A.ec(p.tA(0,m.a===0?null:m),A.a7(["Authorization","Bearer "+a],n,n)),$async$afY)
 case 3:o=d
@@ -35717,7 +35717,7 @@ case 1:return A.o(q,r)}})
 return A.p($async$afY,r)},
 afK(a,b,c){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$afK=A.m(function(d,e){if(d===1)return A.n(e,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/usuarios/"+c+"/secciones",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/usuarios/"+c+"/secciones",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json","Authorization","Bearer "+b],n,n)
 s=3
@@ -35735,7 +35735,7 @@ aga(a,b){var s=0,r=A.q(t.P),q,p,o,n,m
 var $async$aga=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:n=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/usuarios/"+b+"/impacto-eliminar",0,null),A.a7(["Authorization","Bearer "+a],n,n)),$async$aga)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/usuarios/"+b+"/impacto-eliminar",0,null),A.a7(["Authorization","Bearer "+a],n,n)),$async$aga)
 case 3:m=d
 n=m.b
 p=m.e
@@ -35747,7 +35747,7 @@ throw A.e(A.bk(n==null?"No se pudo calcular el impacto":n))}case 1:return A.o(q,
 return A.p($async$aga,r)},
 afX(a,b,c,d){var s=0,r=A.q(t.H),q,p,o,n
 var $async$afX=A.m(function(e,f){if(e===1)return A.n(f,r)
-for(;;)switch(s){case 0:q=A.bO("http://192.168.121.84:8000/usuarios/"+d,0,null)
+for(;;)switch(s){case 0:q=A.bO("http://192.168.121.104:8000/usuarios/"+d,0,null)
 p=t.N
 o=A.a7(["Content-Type","application/json","Authorization","Bearer "+c],p,p)
 s=2
@@ -35758,7 +35758,7 @@ throw A.e(A.bk(p==null?"Error al eliminar el usuario":p))}return A.o(null,r)}})
 return A.p($async$afX,r)},
 Ch(a,b,c,d,e){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$Ch=A.m(function(f,g){if(f===1)return A.n(g,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/proveedores/",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/proveedores/",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json","Authorization","Bearer "+e],n,n)
 s=3
@@ -35785,7 +35785,7 @@ q=n
 s=1
 break}n=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/facturas/tasa-cambio",0,null),A.a7(["Authorization","Bearer "+a],n,n)),$async$PT)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/facturas/tasa-cambio",0,null),A.a7(["Authorization","Bearer "+a],n,n)),$async$PT)
 case 3:o=c
 if(o.b===200){$.afH=A.eh(J.v(B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null),"usd_a_cop"))
 $.b_K=new A.cj(Date.now(),0,!1)
@@ -35800,7 +35800,7 @@ ag9(a,b){var s=0,r=A.q(t.P),q,p,o,n,m
 var $async$ag9=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:n=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/facturas/"+b+"/impacto-eliminar",0,null),A.a7(["Authorization","Bearer "+a],n,n)),$async$ag9)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/facturas/"+b+"/impacto-eliminar",0,null),A.a7(["Authorization","Bearer "+a],n,n)),$async$ag9)
 case 3:m=d
 n=m.b
 p=m.e
@@ -35814,7 +35814,7 @@ afU(a,b){var s=0,r=A.q(t.H),q,p
 var $async$afU=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:q=t.N
 s=2
-return A.i(A.Pb(A.bO("http://192.168.121.84:8000/facturas/"+b,0,null),null,A.a7(["Authorization","Bearer "+a],q,q)),$async$afU)
+return A.i(A.Pb(A.bO("http://192.168.121.104:8000/facturas/"+b,0,null),null,A.a7(["Authorization","Bearer "+a],q,q)),$async$afU)
 case 2:p=d
 if(p.b!==200){q=J.v(B.D.bG(0,A.bC(A.bB(p.e)).bl(0,p.w),null),"detail")
 throw A.e(A.bk(q==null?"Error al eliminar la factura":q))}return A.o(null,r)}})
@@ -35823,7 +35823,7 @@ ag4(a){var s=0,r=A.q(t.P),q,p,o
 var $async$ag4=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/facturas/resumen",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag4)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/facturas/resumen",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag4)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35834,7 +35834,7 @@ ag0(a){var s=0,r=A.q(t.j),q,p,o
 var $async$ag0=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/facturas/agotadas",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag0)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/facturas/agotadas",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag0)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35845,7 +35845,7 @@ Cj(a){var s=0,r=A.q(t.j),q,p,o
 var $async$Cj=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/productos/responsables",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$Cj)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/productos/responsables",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$Cj)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35856,7 +35856,7 @@ PS(a,b){var s=0,r=A.q(t.j),q,p,o,n,m
 var $async$PS=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:n=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/productos/categorias",0,null).tA(0,A.a7(["seccion_id",""+b],n,t.z)),A.a7(["Authorization","Bearer "+a],n,n)),$async$PS)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/productos/categorias",0,null).tA(0,A.a7(["seccion_id",""+b],n,t.z)),A.a7(["Authorization","Bearer "+a],n,n)),$async$PS)
 case 3:m=d
 n=m.b
 p=m.e
@@ -35870,7 +35870,7 @@ Ci(a){var s=0,r=A.q(t.j),q,p,o
 var $async$Ci=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/proveedores/",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$Ci)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/proveedores/",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$Ci)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35879,7 +35879,7 @@ case 1:return A.o(q,r)}})
 return A.p($async$Ci,r)},
 afQ(a,b,c,d){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$afQ=A.m(function(e,f){if(e===1)return A.n(f,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/facturas",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/facturas",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json","Authorization","Bearer "+d],n,n)
 s=3
@@ -35895,7 +35895,7 @@ throw A.e(A.bk(n==null?"Error al crear la factura":n))}case 1:return A.o(q,r)}})
 return A.p($async$afQ,r)},
 afI(a,b,c,d,e){var s=0,r=A.q(t.P),q,p,o,n,m,l
 var $async$afI=A.m(function(f,g){if(f===1)return A.n(g,r)
-for(;;)switch(s){case 0:o=A.bO("http://192.168.121.84:8000/facturas/"+b+"/detalles",0,null)
+for(;;)switch(s){case 0:o=A.bO("http://192.168.121.104:8000/facturas/"+b+"/detalles",0,null)
 n=t.N
 m=A.a7(["Content-Type","application/json","Authorization","Bearer "+e],n,n)
 s=3
@@ -35913,7 +35913,7 @@ afT(a,b,c){var s=0,r=A.q(t.H),q,p
 var $async$afT=A.m(function(d,e){if(d===1)return A.n(e,r)
 for(;;)switch(s){case 0:q=t.N
 s=2
-return A.i(A.Pb(A.bO("http://192.168.121.84:8000/facturas/"+b+"/detalles/"+a,0,null),null,A.a7(["Authorization","Bearer "+c],q,q)),$async$afT)
+return A.i(A.Pb(A.bO("http://192.168.121.104:8000/facturas/"+b+"/detalles/"+a,0,null),null,A.a7(["Authorization","Bearer "+c],q,q)),$async$afT)
 case 2:p=e
 if(p.b!==200){q=J.v(B.D.bG(0,A.bC(A.bB(p.e)).bl(0,p.w),null),"detail")
 throw A.e(A.bk(q==null?"Error al quitar el producto de la factura":q))}return A.o(null,r)}})
@@ -35922,7 +35922,7 @@ afP(a,b){var s=0,r=A.q(t.P),q,p,o,n,m
 var $async$afP=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:n=t.N
 s=3
-return A.i(A.mY(A.bO("http://192.168.121.84:8000/facturas/"+a+"/confirmar",0,null),null,A.a7(["Authorization","Bearer "+b],n,n)),$async$afP)
+return A.i(A.mY(A.bO("http://192.168.121.104:8000/facturas/"+a+"/confirmar",0,null),null,A.a7(["Authorization","Bearer "+b],n,n)),$async$afP)
 case 3:m=d
 n=m.b
 p=m.e
@@ -35936,7 +35936,7 @@ ag_(a){var s=0,r=A.q(t.j),q,p,o
 var $async$ag_=A.m(function(b,c){if(b===1)return A.n(c,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/facturas",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag_)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/facturas",0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$ag_)
 case 3:o=c
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -35947,7 +35947,7 @@ afZ(a,b){var s=0,r=A.q(t.P),q,p,o
 var $async$afZ=A.m(function(c,d){if(c===1)return A.n(d,r)
 for(;;)switch(s){case 0:p=t.N
 s=3
-return A.i(A.ec(A.bO("http://192.168.121.84:8000/facturas/"+b,0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$afZ)
+return A.i(A.ec(A.bO("http://192.168.121.104:8000/facturas/"+b,0,null),A.a7(["Authorization","Bearer "+a],p,p)),$async$afZ)
 case 3:o=d
 if(o.b===200){q=B.D.bG(0,A.bC(A.bB(o.e)).bl(0,o.w),null)
 s=1
@@ -108264,7 +108264,7 @@ return"Buenas noches"},
 On(a,b){var s
 if(B.c.ci(a,"http")){s=a.split("/upload/")
 if(s.length===2)return s[0]+"/upload/w_"+b+",q_auto,f_auto/"+s[1]
-return a}return"http://192.168.121.84:8000"+a},
+return a}return"http://192.168.121.104:8000"+a},
 a2S(a){return this.On(a,220)},
 ahR(){var s,r,q,p,o,n,m,l,k,j,i,h,g=this,f=null,e=g.d,d=e!=null&&e.length!==0
 e=A.kQ(B.db,new A.xw(B.t.af(0.55),B.cf,f,B.Ro),B.bK,B.O7,f)
@@ -109498,7 +109498,7 @@ q=i.dx
 if(q!=null)q=A.kQ(B.U,h,B.bK,new A.k6(q),h)
 else if(J.v(i.a.d,f)!=null&&J.al(J.v(i.a.d,f)).length!==0){q=B.c.ci(J.al(J.v(i.a.d,f)),"http")
 p=i.a
-p=A.kQ(B.U,h,B.bK,new A.l9(q?J.v(p.d,f):"http://192.168.121.84:8000"+A.l(J.v(p.d,f)),1,h,B.i1),h)
+p=A.kQ(B.U,h,B.bK,new A.l9(q?J.v(p.d,f):"http://192.168.121.104:8000"+A.l(J.v(p.d,f)),1,h,B.i1),h)
 q=p}else q=h
 p=i.dx==null&&J.v(i.a.d,f)==null?A.ae(h,B.wd,B.i,h,h,B.k3,h,h,h,B.h2,h,h,h):h
 r=A.bZ(A.it(h,A.ae(B.U,p,B.i,h,h,new A.ag(B.e,q,d,h,r,h,B.aA),h,120,h,h,h,h,120),B.A,!1,h,h,h,h,h,h,h,h,h,h,h,h,h,h,i.galA(),h,h,h,h,h,h),h,h)
@@ -111143,7 +111143,7 @@ $0(){return this.a.e=!1},
 $S:0}
 A.aND.prototype={
 $2(a,b){var s,r,q,p,o,n,m,l,k=null,j="cantidad",i="motivo",h=this.a,g=h.a.f,f=g!=null
-if(f&&b===0)return A.bZ(new A.aE(B.iR,A.jS(A.a2(12),A.b0J("http://192.168.121.84:8000"+g,k,B.bK,160,160),B.bi),k),k,k)
+if(f&&b===0)return A.bZ(new A.aE(B.iR,A.jS(A.a2(12),A.b0J("http://192.168.121.104:8000"+g,k,B.bK,160,160),B.bi),k),k,k)
 s=f?b-1:b
 r=J.v(h.d,s)
 h=J.ad(r)
@@ -111435,7 +111435,7 @@ $1(a){return this.a.ayQ(a)},
 $S:264}
 A.aPu.prototype={
 $1(a){var s,r,q=null,p=J.ad(a),o=p.h(a,"activo"),n=p.h(a,"foto_url"),m=A.a2(16),l=A.ci(B.aj,1),k=this.a,j=o?B.tR:B.ko,i=n!=null
-if(i&&n.length!==0)s=new A.l9(B.c.ci(n,"http")?n:"http://192.168.121.84:8000"+n,1,q,B.i1)
+if(i&&n.length!==0)s=new A.l9(B.c.ci(n,"http")?n:"http://192.168.121.104:8000"+n,1,q,B.i1)
 else s=q
 r=i&&n.length!==0?new A.aPm():q
 if(!i||n.length===0){i=J.c(p.h(a,"es_super_admin"),!0)?B.Wj:B.Wg
@@ -112388,7 +112388,7 @@ o=q!=null
 if(o){n=A.a2(16)
 m=A.ci(B.l.af(0.2),1)
 l=A.b([new A.aW(-4,B.I,B.l.af(0.1),B.j,20)],t.V)
-p.push(A.bZ(A.ae(f,A.jS(A.a2(16),A.b0J("http://192.168.121.84:8000"+q,f,B.bK,180,180),B.bi),B.i,f,f,new A.ag(f,f,m,n,l,f,B.v),f,f,f,f,f,f,f),f,f))}if(o)p.push(B.cJ)
+p.push(A.bZ(A.ae(f,A.jS(A.a2(16),A.b0J("http://192.168.121.104:8000"+q,f,B.bK,180,180),B.bi),B.i,f,f,new A.ag(f,f,m,n,l,f,B.v),f,f,f,f,f,f,f),f,f))}if(o)p.push(B.cJ)
 o=A.a2(16)
 n=A.ci(B.l.af(0.2),1)
 m=A.b([B.e,B.e.af(0.9)],t.W)
@@ -113097,7 +113097,7 @@ m=A.a2(20)
 l=A.ci(B.l,2)
 k=t.V
 j=A.b([new A.aW(-6,B.I,B.l.af(0.12),B.hD,20)],k)
-if(s!=null&&s.length!==0){i=B.c.ci(s,"http")?s:"http://192.168.121.84:8000"+s
+if(s!=null&&s.length!==0){i=B.c.ci(s,"http")?s:"http://192.168.121.104:8000"+s
 i=A.b0J(i,new A.aXk(),B.bK,f,f)}else i=A.cx(B.dk,B.e8,f,56)
 n=A.bZ(A.ae(B.U,i,B.bi,f,f,new A.ag(B.e,f,l,m,j,f,B.v),f,p,f,f,f,f,n),f,f)
 p=A.a2(16)
