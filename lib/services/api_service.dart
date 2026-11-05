@@ -496,6 +496,53 @@ class ApiService {
     }
   }
 
+  // Trae los movimientos de un rango de fechas (por ejemplo, un mes completo).
+  // desde/hasta en formato AAAA-MM-DD (ambos incluidos). tipo: entrada | salida | todos
+  static Future<List<dynamic>> getMovimientosPeriodo(
+    String token, {
+    required String desde,
+    required String hasta,
+    String tipo = 'todos',
+  }) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/movimientos/historial-general')
+        .replace(queryParameters: {'desde': desde, 'hasta': hasta, 'tipo': tipo});
+
+    final respuesta = await http.get(url, headers: {'Authorization': 'Bearer $token'});
+
+    if (respuesta.statusCode == 200) {
+      return jsonDecode(respuesta.body);
+    }
+    throw Exception(_mensajeDeError(respuesta.body, 'No se pudo cargar el historial'));
+  }
+
+  // Descarga el Excel de cierre contable (resumen + tabla de movimientos) de un rango de fechas
+  static Future<Uint8List> exportarMovimientosExcel(
+    String token, {
+    required String desde,
+    required String hasta,
+  }) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/movimientos/exportar-excel')
+        .replace(queryParameters: {'desde': desde, 'hasta': hasta});
+
+    final respuesta = await http.get(url, headers: {'Authorization': 'Bearer $token'});
+
+    if (respuesta.statusCode == 200) {
+      return respuesta.bodyBytes;
+    }
+    throw Exception(_mensajeDeError(respuesta.body, 'No se pudo generar el Excel'));
+  }
+
+  // Lee el mensaje "detail" que manda el backend; si no viene, usa el mensaje por defecto
+  static String _mensajeDeError(String cuerpo, String porDefecto) {
+    try {
+      final error = jsonDecode(cuerpo);
+      if (error is Map && error['detail'] is String) return error['detail'] as String;
+    } catch (_) {
+      // la respuesta no era JSON
+    }
+    return porDefecto;
+  }
+
   // Trae el historial de movimientos hechos POR un usuario (su actividad)
   static Future<List<dynamic>> getHistorialUsuario(String token, int usuarioId) async {
     final url = Uri.parse('${AppConfig.baseUrl}/movimientos/historial-usuario/$usuarioId');
@@ -876,6 +923,38 @@ class ApiService {
     } else {
       throw Exception('No se pudieron cargar los proveedores');
     }
+  }
+
+  // Crea un producto nuevo (stock 0) mientras se ingresa una factura en borrador.
+  // Solo pide permiso de facturas; el stock llega cuando se confirma la factura.
+  static Future<Map<String, dynamic>> crearProductoEnFactura({
+    required String token,
+    required int facturaId,
+    required String nombre,
+    required int seccionId,
+    String? categoria,
+    String unidadMedida = 'unidad',
+  }) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/facturas/$facturaId/productos-nuevos');
+
+    final respuesta = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'nombre': nombre,
+        'seccion_id': seccionId,
+        'categoria': categoria,
+        'unidad_medida': unidadMedida,
+      }),
+    );
+
+    if (respuesta.statusCode == 200) {
+      return jsonDecode(respuesta.body);
+    }
+    throw Exception(_mensajeDeError(respuesta.body, 'No se pudo crear el producto'));
   }
 
   // Crea una factura nueva en estado borrador
