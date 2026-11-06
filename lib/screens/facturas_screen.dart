@@ -1188,8 +1188,14 @@ class _HojaAgregarProductoState extends State<_HojaAgregarProducto> {
 
   Future<void> _cargarSecciones() async {
     try {
-      final secciones = await ApiService.getTodasLasSecciones(widget.token);
-      setState(() => _secciones = secciones);
+      // Solo las secciones del usuario: el backend solo deja agregar a la
+      // factura productos de las secciones que el usuario tiene asignadas.
+      final secciones = await ApiService.getSecciones(widget.token);
+      if (!mounted) return;
+      setState(() {
+        _secciones = secciones;
+        if (secciones.length == 1) _seccionNuevoProducto = secciones[0]['id'] as int;
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1237,13 +1243,12 @@ class _HojaAgregarProductoState extends State<_HojaAgregarProducto> {
 
     setState(() => _guardandoProductoNuevo = true);
     try {
-      final creado = await ApiService.crearProducto(
+      final creado = await ApiService.crearProductoEnFactura(
         token: widget.token,
+        facturaId: widget.facturaId,
         nombre: _nombreNuevoController.text.trim(),
         categoria: _categoriaNuevoController.text.trim().isEmpty ? null : _categoriaNuevoController.text.trim(),
         seccionId: _seccionNuevoProducto!,
-        stockActual: 0,
-        stockMinimo: 0,
         unidadMedida: _unidadNuevoController.text.trim().isEmpty ? 'unidad' : _unidadNuevoController.text.trim(),
       );
       if (!mounted) return;
@@ -1440,7 +1445,10 @@ class _HojaAgregarProductoState extends State<_HojaAgregarProducto> {
                   },
                 ),
               ),
-              if (!_buscando && _resultados.isEmpty && _busquedaController.text.trim().isNotEmpty)
+              // Siempre visible cuando hay texto: antes solo salía si la búsqueda
+              // no encontraba nada, y con 'SEPARADOR DE 3"' siempre aparecía otro
+              // separador parecido, así que no había forma de crear el producto.
+              if (!_buscando && _busquedaController.text.trim().isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: AppSpacing.sm),
                   child: OutlinedButton.icon(
@@ -1449,7 +1457,12 @@ class _HojaAgregarProductoState extends State<_HojaAgregarProducto> {
                       _nombreNuevoController.text = _busquedaController.text.trim();
                     }),
                     icon: const Icon(Icons.add, size: 18),
-                    label: Text('Crear "${_busquedaController.text.trim()}" como producto nuevo'),
+                    label: Text(
+                      _resultados.isEmpty
+                          ? 'Crear "${_busquedaController.text.trim()}" como producto nuevo'
+                          : '¿No es ninguno de estos? Crear "${_busquedaController.text.trim()}" como nuevo',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
             ] else ...[
