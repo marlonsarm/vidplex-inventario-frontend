@@ -553,8 +553,28 @@ Future<void> _confirmarEliminarFactura(Map factura) async {
               valueColor: AlwaysStoppedAnimation(AppColors.rojoAlerta.withValues(alpha: 0.7)),
             ),
           ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _abrirSaldoPorFactura,
+              icon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
+              label: const Text('Ver saldo por factura'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.acento,
+                side: BorderSide(color: AppColors.acento.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  void _abrirSaldoPorFactura() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => _SaldoPorFacturaScreen(token: widget.token)),
     );
   }
 
@@ -569,6 +589,11 @@ Future<void> _confirmarEliminarFactura(Map factura) async {
             icon: Icon(_mostrarUSD ? Icons.attach_money : Icons.currency_exchange, size: 20),
             tooltip: _mostrarUSD ? 'Ver en pesos' : 'Ver en dólares',
             onPressed: _alternarMoneda,
+          ),
+          IconButton(
+            icon: const Icon(Icons.account_balance_wallet_outlined, size: 20),
+            tooltip: 'Saldo por factura',
+            onPressed: _abrirSaldoPorFactura,
           ),
           IconButton(
             icon: const Icon(Icons.history, size: 20),
@@ -815,7 +840,7 @@ class _FacturasAgotadasScreenState extends State<_FacturasAgotadasScreen> {
                                     Text(f['proveedor_nombre']?.toString() ?? '-', style: AppTextStyles.subtitulo(size: 12.5)),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Se elimina definitivamente en unos días',
+                                      'Se oculta de esta lista a los 7 días',
                                       style: AppTextStyles.subtitulo(size: 11, color: AppColors.gris),
                                     ),
                                   ],
@@ -830,6 +855,283 @@ class _FacturasAgotadasScreenState extends State<_FacturasAgotadasScreen> {
                         );
                       },
                     ),
+    );
+  }
+}
+
+/// Lo que vale el inventario que queda, agrupado PROVEEDOR > FACTURA > productos.
+/// Reemplaza la tabla dinámica que contabilidad armaba a mano en Excel.
+class _SaldoPorFacturaScreen extends StatefulWidget {
+  final String token;
+  const _SaldoPorFacturaScreen({required this.token});
+
+  @override
+  State<_SaldoPorFacturaScreen> createState() => _SaldoPorFacturaScreenState();
+}
+
+class _SaldoPorFacturaScreenState extends State<_SaldoPorFacturaScreen> {
+  final _buscarController = TextEditingController();
+  List<dynamic> _proveedores = [];
+  double _total = 0;
+  bool _cargando = true;
+  String? _error;
+  String _filtro = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  @override
+  void dispose() {
+    _buscarController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _cargar() async {
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
+    try {
+      final datos = await ApiService.getSaldoPorFactura(widget.token);
+      if (!mounted) return;
+      setState(() {
+        _proveedores = (datos['proveedores'] as List<dynamic>?) ?? [];
+        _total = (datos['total'] as num?)?.toDouble() ?? 0;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
+
+  /// Filtra por nombre de proveedor o número de factura.
+  List<dynamic> get _visibles {
+    final f = _filtro.trim().toUpperCase();
+    if (f.isEmpty) return _proveedores;
+    final resultado = <dynamic>[];
+    for (final p in _proveedores) {
+      final nombre = (p['proveedor_nombre'] ?? '').toString().toUpperCase();
+      if (nombre.contains(f)) {
+        resultado.add(p);
+        continue;
+      }
+      final facturas = (p['facturas'] as List<dynamic>)
+          .where((x) => (x['numero_factura'] ?? '').toString().toUpperCase().contains(f))
+          .toList();
+      if (facturas.isNotEmpty) {
+        resultado.add({
+          ...Map<String, dynamic>.from(p as Map),
+          'facturas': facturas,
+          'saldo': facturas.fold<double>(0, (s, x) => s + (x['saldo'] as num).toDouble()),
+        });
+      }
+    }
+    return resultado;
+  }
+
+  String _fecha(dynamic iso) {
+    if (iso == null) return '';
+    try {
+      final f = DateTime.parse(iso.toString());
+      return '${f.day.toString().padLeft(2, '0')}/${f.month.toString().padLeft(2, '0')}/${f.year}';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Widget _tarjetaTotal() {
+    final facturas = _proveedores.fold<int>(0, (s, p) => s + (p['facturas'] as List).length);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.verdeOk.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.verdeOk.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Valor total en inventario', style: AppTextStyles.subtitulo(size: 12)),
+                const SizedBox(height: 4),
+                Text(
+                  _formatoCOP(_total),
+                  style: AppTextStyles.cuerpo(size: 20, peso: FontWeight.w800, color: AppColors.verdeOk),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${_proveedores.length} proveedores\n$facturas facturas',
+            textAlign: TextAlign.right,
+            style: AppTextStyles.subtitulo(size: 11.5, color: AppColors.gris),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filaProducto(Map producto) {
+    final cantidad = producto['cantidad_restante'];
+    final precio = (producto['precio_unitario'] as num).toDouble();
+    final saldo = (producto['saldo'] as num).toDouble();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(producto['producto_nombre'].toString(), style: AppTextStyles.cuerpo(size: 12.5)),
+                const SizedBox(height: 2),
+                Text(
+                  '$cantidad × ${_formatoCOP(precio)}',
+                  style: AppTextStyles.subtitulo(size: 11.5, color: AppColors.gris),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(_formatoCOP(saldo), style: AppTextStyles.cuerpo(size: 12.5, peso: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
+  Widget _tarjetaProveedor(Map proveedor) {
+    final facturas = proveedor['facturas'] as List<dynamic>;
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.negro2,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.grisLinea),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            decoration: BoxDecoration(
+              color: AppColors.acento.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.card)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    proveedor['proveedor_nombre'].toString(),
+                    style: AppTextStyles.cuerpo(size: 13.5, peso: FontWeight.w800),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _formatoCOP((proveedor['saldo'] as num).toDouble()),
+                  style: AppTextStyles.cuerpo(size: 14, peso: FontWeight.w800, color: AppColors.acento),
+                ),
+              ],
+            ),
+          ),
+          ...facturas.map((f) {
+            final productos = f['productos'] as List<dynamic>;
+            return Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                childrenPadding: const EdgeInsets.only(bottom: 8),
+                iconColor: AppColors.acento,
+                collapsedIconColor: AppColors.gris,
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        f['numero_factura'].toString(),
+                        style: AppTextStyles.cuerpo(size: 13, peso: FontWeight.w700),
+                      ),
+                    ),
+                    Text(
+                      _formatoCOP((f['saldo'] as num).toDouble()),
+                      style: AppTextStyles.cuerpo(size: 13, peso: FontWeight.w700, color: AppColors.verdeOk),
+                    ),
+                  ],
+                ),
+                subtitle: Text(
+                  '${_fecha(f['fecha_factura'])} · ${productos.length} ${productos.length == 1 ? 'producto' : 'productos'}',
+                  style: AppTextStyles.subtitulo(size: 11.5, color: AppColors.gris),
+                ),
+                children: productos.map<Widget>((p) => _filaProducto(p as Map)).toList(),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final visibles = _visibles;
+    return Scaffold(
+      backgroundColor: AppColors.negro,
+      appBar: AppBar(
+        title: Text('Saldo por factura', style: AppTextStyles.titulo(size: 16)),
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh, size: 20), tooltip: 'Actualizar', onPressed: _cargar),
+        ],
+      ),
+      body: _cargando
+          ? const Center(child: CircularProgressIndicator(color: AppColors.acento))
+          : _error != null
+              ? Center(child: Text(_error!, style: AppTextStyles.cuerpo(color: AppColors.rojoAlerta)))
+              : RefreshIndicator(
+                  color: AppColors.acento,
+                  backgroundColor: AppColors.negro2,
+                  onRefresh: _cargar,
+                  child: ListView(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                    children: [
+                      _tarjetaTotal(),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
+                        child: TextField(
+                          controller: _buscarController,
+                          onChanged: (v) => setState(() => _filtro = v),
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.search),
+                            hintText: 'Buscar proveedor o factura',
+                          ),
+                        ),
+                      ),
+                      if (visibles.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 60),
+                          child: Center(
+                            child: Text(
+                              _proveedores.isEmpty ? 'No hay facturas con saldo en inventario' : 'Sin resultados',
+                              style: AppTextStyles.cuerpo(color: AppColors.gris),
+                            ),
+                          ),
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          child: Column(
+                            children: visibles.map<Widget>((p) => _tarjetaProveedor(p as Map)).toList(),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
     );
   }
 }
