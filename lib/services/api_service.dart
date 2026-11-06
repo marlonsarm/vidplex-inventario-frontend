@@ -874,6 +874,16 @@ class ApiService {
     }
   }
 
+  // Lo que vale el inventario que queda, agrupado: proveedor > factura > productos
+  static Future<Map<String, dynamic>> getSaldoPorFactura(String token) async {
+    final url = Uri.parse('${AppConfig.baseUrl}/facturas/saldo-por-factura');
+    final respuesta = await http.get(url, headers: {'Authorization': 'Bearer $token'});
+    if (respuesta.statusCode == 200) {
+      return jsonDecode(respuesta.body);
+    }
+    throw Exception(_mensajeDeError(respuesta.body, 'No se pudo cargar el saldo por factura'));
+  }
+
   // Trae las facturas que ya se agotaron (historial temporal de 7 días)
   static Future<List<dynamic>> getFacturasAgotadas(String token) async {
     final url = Uri.parse('${AppConfig.baseUrl}/facturas/agotadas');
